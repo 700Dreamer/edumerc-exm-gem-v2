@@ -32,4 +32,4 @@ images = {
 html = build_nursery_html(exam_data, images)
 with open("test_zero.html", "w") as f:
     f.write(html)
-print("Done")
+print("Done.")
