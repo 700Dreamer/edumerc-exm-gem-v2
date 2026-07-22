@@ -442,19 +442,27 @@ async def generate_diagrams_for_questions(questions: list, subject: str, level: 
     results = await asyncio.gather(*tasks)
     return list(results)
 
-def get_openai_client():
-    """Retrieves API Key from environment to instantiate OpenAI client safely."""
+def get_openai_client(ai_model: str = "gpt-4o"):
+    """Retrieves API Key from environment or connects to local Ollama instance."""
+    if ai_model and ("ollama" in ai_model.lower() or "gemma" in ai_model.lower() or "qwen" in ai_model.lower()):
+        base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+        return OpenAI(api_key="ollama", base_url=base_url)
+
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError("OPENAI_API_KEY is missing. Add it to the .env file in the root directory.")
+        api_key = "dummy_key"
     return OpenAI(api_key=api_key)
 
-def get_async_openai_client():
-    """Retrieves API Key from environment to instantiate Async OpenAI client safely."""
+def get_async_openai_client(ai_model: str = "gpt-4o"):
+    """Retrieves API Key from environment or connects to local Ollama instance."""
+    import httpx
+    if ai_model and ("ollama" in ai_model.lower() or "gemma" in ai_model.lower() or "qwen" in ai_model.lower()):
+        base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+        return AsyncOpenAI(api_key="ollama", base_url=base_url, timeout=httpx.Timeout(300.0))
+
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError("OPENAI_API_KEY is missing. Add it to the .env file in the root directory.")
-    import httpx
+        api_key = "dummy_key"
     return AsyncOpenAI(api_key=api_key, timeout=httpx.Timeout(120.0))
 
 def process_tikz_safeguard(raw_text):
@@ -735,8 +743,9 @@ Output JSON structure:
             authoritative_commands_rule=authoritative_commands_rule
         )
         try:
+            client = get_async_openai_client(ai_model)
             from core.telemetry import emit_progress
-            emit_progress("GENERATOR AGENT", f"Drafting chunk {start_num}-{start_num+chunk_size-1}...")
+            emit_progress("GENERATOR AGENT", f"Drafting chunk {start_num}-{start_num+chunk_size-1} using {ai_model}...")
             response = await client.chat.completions.create(
                 model=ai_model,
                 messages=[
