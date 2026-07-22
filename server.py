@@ -735,8 +735,58 @@ def get_config():
         "syllabus": MASTER_SYLLABUS
     }
 
+TOPIC_KEYWORDS = {
+    'whole numbers': ['whole number', 'place value', 'expanded', 'roman numeral', 'digits', 'numbers', 'values'],
+    'operations': ['operation', 'addition', 'subtraction', 'multiplication', 'division', 'bodmas', 'add', 'subtract', 'multiply', 'divide', 'sum', 'difference', 'product', 'quotient'],
+    'fractions': ['fraction', 'numerator', 'denominator', 'equivalent', 'improper', 'mixed'],
+    'decimals': ['decimal', 'tenths', 'hundredths', 'decimal point', 'recurring'],
+    'ratios': ['ratio', 'proportion', 'share', 'scale', 'ratio & proportion'],
+    'data handling': ['data', 'graph', 'chart', 'tally', 'mean', 'median', 'mode', 'pictograph', 'bar graph', 'pie chart'],
+    'set concepts': ['set', 'sets', 'venn', 'union', 'intersection', 'subset', 'element', 'empty set', 'cardinal'],
+    'sets': ['set', 'sets', 'venn', 'union', 'intersection', 'subset', 'element', 'empty set', 'cardinal'],
+    'geometry': ['angle', 'triangle', 'circle', 'perimeter', 'area', 'volume', 'polygon', 'line', 'parallel', 'perpendicular', 'construction', 'cube', 'cuboid'],
+    'algebra': ['algebra', 'equation', 'expression', 'unknown', 'variable', 'simplify', 'solve', 'substitute', 'expansion', 'factorize'],
+    'integers': ['integer', 'negative', 'positive', 'number line', 'directed numbers'],
+    'money': ['money', 'shillings', 'cost', 'price', 'profit', 'loss', 'discount', 'simple interest', 'currency', 'buying', 'selling'],
+    'time': ['time', 'clock', 'hour', 'minute', 'second', 'speed', 'distance', 'duration', 'timetable', 'calendar', 'arrival', 'departure'],
+    'capacity': ['capacity', 'liter', 'litre', 'milliliter', 'millilitre', 'volume', 'liquid'],
+}
+
+def _get_subject_variants(s: str) -> list:
+    s_clean = s.lower()
+    variants = [s, s.lower(), s.upper()]
+    if 'math' in s_clean or 'mtc' in s_clean:
+        variants.extend(['Mathematics', 'Maths', 'MTC', 'Math', 'mtc', 'maths'])
+    elif 'science' in s_clean or 'sci' in s_clean:
+        variants.extend(['Integrated Science', 'Science', 'SCI', 'Sci', 'science'])
+    elif 'social' in s_clean or 'sst' in s_clean:
+        variants.extend(['Social Studies', 'Social Studies with Religious Education', 'SST', 'S.S.T', 'sst'])
+    elif 'english' in s_clean or 'eng' in s_clean:
+        variants.extend(['English', 'English Language', 'ENG', 'Eng', 'english'])
+    return list(set(variants))
+
+def _get_level_variants(l: str) -> list:
+    l_clean = l.lower().replace('.', '')
+    variants = [l, l.lower(), l.upper()]
+    if 'primary' in l_clean or l_clean.startswith('p'):
+        num = ''.join(c for c in l_clean if c.isdigit())
+        if num:
+            variants.extend([f'Primary {num}', f'P.{num}', f'P{num}', f'p{num}', f'p.{num}', f'PRIMARY {num}'])
+    elif 'senior' in l_clean or l_clean.startswith('s'):
+        num = ''.join(c for c in l_clean if c.isdigit())
+        if num:
+            variants.extend([f'Senior {num}', f'S.{num}', f'S{num}', f's{num}', f's.{num}', f'SENIOR {num}'])
+    elif 'baby' in l_clean:
+        variants.extend(['Baby Class', 'Baby', 'baby'])
+    elif 'middle' in l_clean:
+        variants.extend(['Middle Class', 'Middle', 'middle'])
+    elif 'top' in l_clean:
+        variants.extend(['Top Class', 'Top', 'top'])
+    return list(set(variants))
+
 @app.get("/api/analytics/global")
 def global_analytics():
+    """Aggregates institutional data across subjects and levels for coverage monitoring."""
     DB_DIR = os.path.join(BASE_DIR, "chroma_db")
     import chromadb
     client = chromadb.PersistentClient(path=DB_DIR)
@@ -745,43 +795,42 @@ def global_analytics():
     summary = {}
     for s in ALL_SUBJECTS:
         summary[s] = {}
+        s_variants = _get_subject_variants(s)
         for l in ALL_LEVELS:
             master = get_master_topics(s, l)
             if not master: continue
             
-            # Create naming variants to catch 'P7', 'Primary 7', etc.
-            short_l = ""
-            if "Primary" in l: short_l = f"P{l.split()[-1]}"
-            elif "Senior" in l: short_l = f"S{l.split()[-1]}"
-            
-            variants = [l, short_l, l.upper(), l.lower(), short_l.lower()] if short_l else [l]
-            variants = list(set([v for v in variants if v]))
+            l_variants = _get_level_variants(l)
             
             # Query targeted count and data for this bucket
             results = col.get(
                 where={"$and": [
-                    {"subject": {"$in": [s, s.lower(), s.upper()]}},
-                    {"level": {"$in": variants}}
+                    {"subject": {"$in": s_variants}},
+                    {"level": {"$in": l_variants}}
                 ]},
                 include=["documents", "metadatas"],
-                limit=1000
+                limit=2000
             )
             
-            docs = results["documents"] or []
-            metas = results["metadatas"] or []
+            docs = results.get("documents") or []
+            metas = results.get("metadatas") or []
             
             found = set()
             found_sources = {}
-            for doc, meta in zip(docs, metas):
-                text = " ".join([meta.get("filename", ""), meta.get("topic", ""), (doc or "")[:200]]).lower()
-                fname = meta.get("filename", "Unknown Source")
-                for t in master:
-                    if t.lower() in text:
+            for t in master:
+                t_clean = t.lower().strip()
+                keywords = TOPIC_KEYWORDS.get(t_clean, [t_clean])
+                t_words = [w for w in t_clean.split() if len(w) > 3]
+                
+                for doc, meta in zip(docs, metas):
+                    fname = meta.get("filename", "Unknown Source")
+                    full_text = f"{fname} {meta.get('topic', '')} {doc or ''}".lower()
+                    if any(k in full_text for k in keywords) or any(w in full_text for w in t_words):
                         found.add(t)
                         if t not in found_sources: found_sources[t] = []
                         if fname not in found_sources[t]: found_sources[t].append(fname)
             
-            level_chunks = len(results["ids"])
+            level_chunks = len(results.get("ids") or [])
             summary[s][l] = {
                 "coverage": round((len(found) / len(master)) * 100, 1) if master else 0,
                 "topics_found": len(found),
@@ -793,69 +842,6 @@ def global_analytics():
             }
     
     return summary
-
-@app.get("/api/analytics/audit")
-async def global_level_audit(subject: str, level: str):
-    DB_DIR = os.path.join(BASE_DIR, "chroma_db")
-    import chromadb
-    client = chromadb.PersistentClient(path=DB_DIR)
-    col = client.get_or_create_collection(name="exam_syllabus_collection")
-    
-    # Matching variants
-    short_l = ""
-    if "Primary" in level: short_l = f"P{level.split()[-1]}"
-    elif "Senior" in level: short_l = f"S{level.split()[-1]}"
-    variants = list(set([v for v in [level, short_l, level.upper(), level.lower()] if v]))
-    
-    results = col.get(
-        where={"$and": [
-            {"subject": {"$in": [subject, subject.lower(), subject.upper()]}},
-            {"level": {"$in": variants}}
-        ]},
-        include=["documents"],
-        limit=100
-    )
-    
-    combined_content = " ".join(results["documents"] or [])
-    if not combined_content.strip():
-        return {"error": f"No content found for {subject} {level} (Tried variants: {variants})"}
-        
-    analysis = await analyze_pedagogy(combined_content, subject, level)
-    return analysis
-
-@app.get("/api/ingestion/stats")
-def ingestion_stats():
-    DB_DIR = os.path.join(BASE_DIR, "chroma_db")
-    st_stats = get_ingest_stats()
-    
-    total_chunks = 0
-    try:
-        import chromadb
-        client = chromadb.PersistentClient(path=DB_DIR)
-        col = client.get_or_create_collection(name="exam_syllabus_collection")
-        total_chunks = col.count()
-    except Exception: pass
-
-    return {
-        "total_chunks": total_chunks,
-        "total_files": st_stats["total_files"],
-        "embedded_files": st_stats["embedded_files"],
-        "error_count": st_stats["error_count"],
-        "errors": st_stats["errors"]
-    }
-
-class ChatRequest(BaseModel):
-    messages: List[dict]
-    subject: Optional[str] = "General"
-    level: Optional[str] = "Standard"
-
-@app.post("/api/chat")
-async def chat_endpoint(req: ChatRequest):
-    try:
-        reply = await chat_response(req.messages, req.subject, req.level)
-        return {"response": reply}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # ── INSIGHTS: Coverage heatmap ──
 @app.get("/api/insights/coverage")
@@ -873,17 +859,14 @@ def insights_coverage(subject: str, level: str):
     if not master:
         return {"coverage_percent": 0, "found_count": 0, "total_count": 0, "topic_density": {}}
 
-    # Build level variants
-    short_l = ""
-    if "Primary" in level: short_l = f"P{level.split()[-1]}"
-    elif "Senior" in level: short_l = f"S{level.split()[-1]}"
-    variants = list(set([v for v in [level, short_l, level.upper(), level.lower()] if v]))
+    s_variants = _get_subject_variants(subject)
+    l_variants = _get_level_variants(level)
 
     try:
         results = col.get(
             where={"$and": [
-                {"subject": {"$in": [subject, subject.lower(), subject.upper()]}},
-                {"level": {"$in": variants}}
+                {"subject": {"$in": s_variants}},
+                {"level": {"$in": l_variants}}
             ]},
             include=["documents", "metadatas"],
             limit=2000
@@ -897,12 +880,13 @@ def insights_coverage(subject: str, level: str):
     # Count how many chunks match each topic keyword
     topic_density = {}
     for t in master:
+        t_clean = t.lower().strip()
+        keywords = TOPIC_KEYWORDS.get(t_clean, [t_clean])
+        t_words = [w for w in t_clean.split() if len(w) > 3]
         count = 0
         for doc, meta in zip(docs, metas):
-            text = " ".join([
-                meta.get("filename", ""), meta.get("topic", ""), (doc or "")[:300]
-            ]).lower()
-            if t.lower() in text:
+            full_text = f"{meta.get('filename', '')} {meta.get('topic', '')} {doc or ''}".lower()
+            if any(k in full_text for k in keywords) or any(w in full_text for w in t_words):
                 count += 1
         topic_density[t] = count
 
