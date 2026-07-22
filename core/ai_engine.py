@@ -702,6 +702,8 @@ Output JSON structure:
             layout_instruction += "\n- DIAGRAM PREAMBLE RULE: If a question requires a diagram, the question `text` MUST begin with a formal UNEB preamble (e.g., 'Study the diagram of the [object] below and use it to answer the question.')."
             layout_instruction += "\n- NO SHARED DIAGRAMS: Every question MUST be 100% self-contained. Do not write 'Use the diagram to answer questions 4 and 5'. Instead, attach the diagram to question 4, and if question 5 needs a diagram, describe a new one or make it independent."
 
+        if _level and _level != level:
+            layout_instruction += f"\n- COGNITIVE PITCH & RANDOM SPREAD: Although these questions cover topics from {_level}, the examination is set for {level} students. You MUST pitch the problem complexity, wording, and multi-step reasoning depth at the higher {level} cognitive standard. Spread questions across the whole {_level} syllabus."
 
         if is_ecd or is_lower_primary:
             prep_req = "\n5. EXTREME SIMPLICITY & VISUAL REQUIREMENT: You MUST use extremely basic vocabulary (e.g., 'Write', 'Draw', 'Count', 'Match'). Sentences MUST be under 7 words! ALMOST EVERY question MUST be visually driven. Include an explicit image placeholder like '[Picture of 3 big red mangoes]' directly in the 'text' field for the Image Agent to process!"
@@ -787,7 +789,8 @@ Output JSON structure:
 
     # ── 3. PARALLEL CHUNKING WITH EDUMERC POLICY ──
     try:
-        policy_ratios = get_edumerc_policy(level)
+        is_special_or_mock = "mock" in str(paper_style).lower() or "mock" in str(term).lower() or "special" in str(paper_style).lower()
+        policy_ratios = get_edumerc_policy(level, is_special_or_mock=is_special_or_mock)
         
         class_allocations = {}
         remaining_questions = num_questions

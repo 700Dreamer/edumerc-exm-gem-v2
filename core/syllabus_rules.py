@@ -1,4 +1,4 @@
-def get_edumerc_policy(level: str) -> dict:
+def get_edumerc_policy(level: str, is_special_or_mock: bool = False) -> dict:
     """
     Returns the distribution of questions across current and previous class levels.
     E.g. For 'Primary 5' (P.5), returns {"Primary 5": 0.60, "Primary 4": 0.25, "Primary 3": 0.15}
@@ -20,7 +20,7 @@ def get_edumerc_policy(level: str) -> dict:
         return {"Top Class": 0.60, "Middle Class": 0.30, "Baby Class": 0.10}
         
     elif "primary 1" in l:
-        return {"Primary 1": 0.70, "Top Class": 0.30}
+        return {"Primary 1": 1.0}
     elif "primary 2" in l:
         return {"Primary 2": 0.70, "Primary 1": 0.30}
     elif "primary 3" in l:
@@ -33,6 +33,8 @@ def get_edumerc_policy(level: str) -> dict:
     elif "primary 6" in l:
         return {"Primary 6": 0.50, "Primary 5": 0.40, "Primary 4": 0.10}
     elif "primary 7" in l:
+        if is_special_or_mock:
+            return {"Primary 7": 0.20, "Primary 6": 0.25, "Primary 5": 0.40, "Primary 4": 0.15}
         return {"Primary 7": 0.20, "Primary 6": 0.30, "Primary 5": 0.40, "Primary 4": 0.10}
         
     # Default fallback for Secondary or unrecognized

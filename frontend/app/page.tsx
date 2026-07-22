@@ -1606,7 +1606,7 @@ function StudioView({
         isLeftSidebarOpen 
           ? (previewHtml 
              ? "translate-x-0 w-[85%] sm:w-[450px] p-4 lg:p-6 opacity-100" 
-             : "translate-x-0 w-full lg:max-w-5xl mx-auto p-6 lg:p-12 opacity-100")
+             : "translate-x-0 w-full lg:max-w-7xl mx-auto p-6 lg:p-12 opacity-100")
           : "-translate-x-full lg:translate-x-0 lg:w-0 p-0 lg:opacity-0 lg:border-none"
       )}>
         <div className="flex gap-1 bg-surface-soft p-1 rounded-xl">
@@ -2277,13 +2277,116 @@ function GeneratorControls({
     setIsCompositionEditMode(false);
   }, [level, subject, term]);
 
-  const getComposition = (levelStr: string, count: number) => {
+  const getComposition = (levelStr: string, count: number, isSpecialOrMock: boolean = false) => {
     const clean = levelStr.trim().toLowerCase().replace(".", "");
     let l = clean;
     if (clean.startsWith("p") && /^\d+$/.test(clean.slice(1))) {
       l = `primary ${clean.slice(1)}`;
     }
 
+    // ── EXACT PRESET BREAKDOWNS FOR OFFICIAL QUESTION COUNTS (10, 32, 55) ──
+    if (count === 10) {
+      if (l.includes("baby")) return [{ name: "Baby Class", ratio: 1.0, count: 10 }];
+      if (l.includes("middle")) return [
+        { name: "Middle Class", ratio: 0.80, count: 8 },
+        { name: "Baby Class", ratio: 0.20, count: 2 }
+      ];
+      if (l.includes("top")) return [
+        { name: "Top Class", ratio: 0.60, count: 6 },
+        { name: "Middle Class", ratio: 0.30, count: 3 },
+        { name: "Baby Class", ratio: 0.10, count: 1 }
+      ];
+    }
+
+    if (count === 55) {
+      if (l.includes("primary 1")) return [{ name: "Primary 1", ratio: 1.0, count: 55 }];
+      if (l.includes("primary 2")) return [
+        { name: "Primary 2", ratio: 0.70, count: 39 },
+        { name: "Primary 1", ratio: 0.30, count: 16 }
+      ];
+      if (l.includes("primary 3")) return [
+        { name: "Primary 3", ratio: 0.70, count: 39 },
+        { name: "Primary 2", ratio: 0.30, count: 16 }
+      ];
+      if (l.includes("primary 4")) return [
+        { name: "Primary 4", ratio: 0.65, count: 36 },
+        { name: "Primary 3", ratio: 0.20, count: 11 },
+        { name: "Primary 2", ratio: 0.15, count: 8 }
+      ];
+      if (l.includes("primary 5")) return [
+        { name: "Primary 5", ratio: 0.60, count: 33 },
+        { name: "Primary 4", ratio: 0.25, count: 14 },
+        { name: "Primary 3", ratio: 0.15, count: 8 }
+      ];
+      if (l.includes("primary 6")) return [
+        { name: "Primary 6", ratio: 0.50, count: 28 },
+        { name: "Primary 5", ratio: 0.40, count: 22 },
+        { name: "Primary 4", ratio: 0.10, count: 5 }
+      ];
+      if (l.includes("primary 7")) {
+        if (isSpecialOrMock) {
+          return [
+            { name: "Primary 7", ratio: 0.20, count: 11 },
+            { name: "Primary 6", ratio: 0.25, count: 14 },
+            { name: "Primary 5", ratio: 0.40, count: 22 },
+            { name: "Primary 4", ratio: 0.15, count: 8 }
+          ];
+        } else {
+          return [
+            { name: "Primary 7", ratio: 0.20, count: 11 },
+            { name: "Primary 6", ratio: 0.30, count: 17 },
+            { name: "Primary 5", ratio: 0.40, count: 22 },
+            { name: "Primary 4", ratio: 0.10, count: 5 }
+          ];
+        }
+      }
+    }
+
+    if (count === 32) {
+      if (l.includes("primary 1")) return [{ name: "Primary 1", ratio: 1.0, count: 32 }];
+      if (l.includes("primary 2")) return [
+        { name: "Primary 2", ratio: 0.70, count: 22 },
+        { name: "Primary 1", ratio: 0.30, count: 10 }
+      ];
+      if (l.includes("primary 3")) return [
+        { name: "Primary 3", ratio: 0.70, count: 22 },
+        { name: "Primary 2", ratio: 0.30, count: 10 }
+      ];
+      if (l.includes("primary 4")) return [
+        { name: "Primary 4", ratio: 0.65, count: 21 },
+        { name: "Primary 3", ratio: 0.20, count: 6 },
+        { name: "Primary 2", ratio: 0.15, count: 5 }
+      ];
+      if (l.includes("primary 5")) return [
+        { name: "Primary 5", ratio: 0.60, count: 19 },
+        { name: "Primary 4", ratio: 0.25, count: 8 },
+        { name: "Primary 3", ratio: 0.15, count: 5 }
+      ];
+      if (l.includes("primary 6")) return [
+        { name: "Primary 6", ratio: 0.50, count: 16 },
+        { name: "Primary 5", ratio: 0.40, count: 13 },
+        { name: "Primary 4", ratio: 0.10, count: 3 }
+      ];
+      if (l.includes("primary 7")) {
+        if (isSpecialOrMock) {
+          return [
+            { name: "Primary 7", ratio: 0.20, count: 6 },
+            { name: "Primary 6", ratio: 0.25, count: 8 },
+            { name: "Primary 5", ratio: 0.40, count: 13 },
+            { name: "Primary 4", ratio: 0.15, count: 5 }
+          ];
+        } else {
+          return [
+            { name: "Primary 7", ratio: 0.20, count: 6 },
+            { name: "Primary 6", ratio: 0.30, count: 10 },
+            { name: "Primary 5", ratio: 0.40, count: 13 },
+            { name: "Primary 4", ratio: 0.10, count: 3 }
+          ];
+        }
+      }
+    }
+
+    // ── DYNAMIC RATIO FALLBACK FOR CUSTOM QUESTION COUNTS ──
     let policy: { [key: string]: number } = {};
 
     if (l.includes("baby")) {
@@ -2293,7 +2396,7 @@ function GeneratorControls({
     } else if (l.includes("top")) {
       policy = { "Top Class": 0.60, "Middle Class": 0.30, "Baby Class": 0.10 };
     } else if (l.includes("primary 1")) {
-      policy = { "Primary 1": 0.70, "Top Class": 0.30 };
+      policy = { "Primary 1": 1.0 };
     } else if (l.includes("primary 2")) {
       policy = { "Primary 2": 0.70, "Primary 1": 0.30 };
     } else if (l.includes("primary 3")) {
@@ -2305,7 +2408,11 @@ function GeneratorControls({
     } else if (l.includes("primary 6")) {
       policy = { "Primary 6": 0.50, "Primary 5": 0.40, "Primary 4": 0.10 };
     } else if (l.includes("primary 7")) {
-      policy = { "Primary 7": 0.20, "Primary 6": 0.30, "Primary 5": 0.40, "Primary 4": 0.10 };
+      if (isSpecialOrMock) {
+        policy = { "Primary 7": 0.20, "Primary 6": 0.25, "Primary 5": 0.40, "Primary 4": 0.15 };
+      } else {
+        policy = { "Primary 7": 0.20, "Primary 6": 0.30, "Primary 5": 0.40, "Primary 4": 0.10 };
+      }
     } else {
       return [{ name: levelStr, ratio: 1.0, count: count }];
     }
@@ -2341,13 +2448,20 @@ function GeneratorControls({
     }
 
     let available = [...classTopics];
-    const termLower = term.toLowerCase();
-    if (termLower.includes("term 1") || termLower.includes("bot")) {
-      const cutoff = Math.ceil(classTopics.length * 0.33);
-      available = classTopics.slice(0, cutoff);
-    } else if (termLower.includes("term 2")) {
-      const cutoff = Math.ceil(classTopics.length * 0.66);
-      available = classTopics.slice(0, cutoff);
+    const isLowerClassTopic = compName !== level;
+    
+    if (isLowerClassTopic) {
+      // Key Note: Lower class topics picked randomly across the syllabus
+      available = [...classTopics].sort((a, b) => (a.length % 3) - (b.length % 3));
+    } else {
+      const termLower = term.toLowerCase();
+      if (termLower.includes("term 1") || termLower.includes("bot")) {
+        const cutoff = Math.ceil(classTopics.length * 0.33);
+        available = classTopics.slice(0, cutoff);
+      } else if (termLower.includes("term 2")) {
+        const cutoff = Math.ceil(classTopics.length * 0.66);
+        available = classTopics.slice(0, cutoff);
+      }
     }
     if (available.length === 0) {
       available = [...classTopics];
@@ -2378,38 +2492,29 @@ function GeneratorControls({
     return result;
   };
 
-  // 📄 PAPER STANDARDS MAPPING
+  // 📄 PAPER STANDARDS MAPPING FOR EVERY CLASS LEVEL
   useEffect(() => {
     if (mode !== "Exams") return;
-    const standards: Record<string, Record<string, { count: number; duration: string }>> = {
-      "Primary 7": {
-        "Mathematics": { count: 32, duration: "2 HR 30 MIN" },
-        "Integrated Science": { count: 55, duration: "2 HR 15 MIN" },
-        "Social Studies with Religious Education": { count: 55, duration: "2 HR 15 MIN" },
-        "English": { count: 55, duration: "2 HR 15 MIN" },
-      },
-      "Primary 6": {
-        "Mathematics": { count: 30, duration: "2 HR 30 MIN" },
-        "Integrated Science": { count: 55, duration: "2 HR 15 MIN" },
-        "Social Studies with Religious Education": { count: 55, duration: "2 HR 15 MIN" },
-        "English": { count: 55, duration: "2 HR 15 MIN" }
-      },
-      "Primary 5": {
-        "Mathematics": { count: 30, duration: "2 HR 30 MIN" },
-        "Integrated Science": { count: 55, duration: "2 HR 15 MIN" },
-        "Social Studies with Religious Education": { count: 55, duration: "2 HR 15 MIN" },
-        "English": { count: 55, duration: "2 HR 15 MIN" }
-      },
-      "Primary 4": {
-        "Mathematics": { count: 30, duration: "2 HR 30 MIN" },
-        "Integrated Science": { count: 55, duration: "2 HR 15 MIN" },
-        "Social Studies with Religious Education": { count: 55, duration: "2 HR 15 MIN" },
-        "English": { count: 55, duration: "2 HR 15 MIN" }
-      },
-    };
-    const std = standards[level]?.[subject] || { count: 20, duration: "2 HR" };
-    setQCount(std.count);
-    setDuration(std.duration);
+
+    const isPrePrimary = ["Baby Class", "Middle Class", "Top Class"].includes(level);
+    const isMaths = subject.toLowerCase().includes("math");
+    const isPrimary = level.startsWith("Primary") || /^P\d+/i.test(level);
+
+    if (isPrePrimary) {
+      setQCount(10);
+      setDuration("1 HR");
+    } else if (isPrimary) {
+      if (isMaths) {
+        setQCount(32);
+        setDuration("2 HR 30 MIN");
+      } else {
+        setQCount(55);
+        setDuration("2 HR 15 MIN");
+      }
+    } else {
+      setQCount(20);
+      setDuration("2 HR");
+    }
   }, [level, subject, mode]);
 
   useEffect(() => {
@@ -2499,16 +2604,27 @@ function GeneratorControls({
   return (
     <div className={cn(
       "grid gap-6 animate-in fade-in slide-in-from-left-4 duration-300 w-full",
-      hasPreview ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+      hasPreview ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"
     )}>
-      <div className="flex flex-col gap-6 w-full">
-        <div className="grid grid-cols-2 gap-4">
+      {/* ── COLUMN 1: Grade and Subject Level ── */}
+      <div className="flex flex-col gap-5 w-full bg-surface-soft/40 border border-border-main p-5 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-2.5 border-b border-border-main pb-3">
+          <div className="w-7 h-7 rounded-xl bg-brand-800/10 text-brand-800 flex items-center justify-center font-bold">
+            <BookOpen className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Grade & Subject Level</h3>
+            <p className="text-[10px] text-foreground opacity-50 font-medium">Select target class, subject & term period</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="sec-label">Grade / Level</label>
             <select 
               value={level}
               onChange={(e) => { setLevel(e.target.value); setTopic(""); }}
-              className="w-full bg-surface-soft border border-border-main rounded-lg p-2.5 text-xs font-bold outline-none"
+              className="w-full bg-surface-soft border border-border-main rounded-xl p-2.5 text-xs font-bold outline-none focus:border-brand-800 transition-colors"
             >
               {config.levels
                 .filter((l: string) => !["Baby Class", "Middle Class", "Top Class"].includes(l))
@@ -2520,14 +2636,14 @@ function GeneratorControls({
             <select 
               value={subject}
               onChange={(e) => { setSubject(e.target.value); setTopic(""); }}
-              className="w-full bg-surface-soft border border-border-main rounded-lg p-2.5 text-xs font-bold outline-none"
+              className="w-full bg-surface-soft border border-border-main rounded-xl p-2.5 text-xs font-bold outline-none focus:border-brand-800 transition-colors"
             >
               {availableSubjects.map((s: string) => <option key={s}>{s}</option>)}
             </select>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="sec-label">Academic Term</label>
             <div className="flex gap-1 bg-surface-soft p-1 rounded-xl border border-border-main">
@@ -2569,7 +2685,7 @@ function GeneratorControls({
           <select 
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            className="w-full bg-surface-soft border border-border-main rounded-xl p-3 text-xs font-bold outline-none appearance-none cursor-pointer"
+            className="w-full bg-surface-soft border border-border-main rounded-xl p-3 text-xs font-bold outline-none appearance-none cursor-pointer focus:border-brand-800 transition-colors"
           >
             <option value="">Full Syllabus Coverage</option>
             {availableTopics.map((t: string) => <option key={t} value={t}>{t}</option>)}
@@ -2577,13 +2693,22 @@ function GeneratorControls({
         </div>
       </div>
 
-      <div className="flex flex-col gap-6 w-full justify-between">
+      {/* ── COLUMN 2: Topical Composition ── */}
+      <div className="flex flex-col gap-5 w-full">
         {mode === "Exams" && (
-          <div className="bg-surface-soft border border-border-main rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in duration-300">
+          <div className="bg-surface-soft/40 border border-border-main rounded-2xl p-5 flex flex-col gap-4 shadow-sm h-full animate-in fade-in duration-300">
             {/* Header row */}
-            <div className="flex items-center justify-between border-b border-border-main pb-2">
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black text-foreground opacity-60 uppercase tracking-wider">Topical Composition Breakdown</span>
+            <div className="flex flex-wrap items-center justify-between border-b border-border-main pb-3 gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-xl bg-brand-800/10 text-brand-800 flex items-center justify-center font-bold">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Topical Composition</h3>
+                  <p className="text-[10px] text-foreground opacity-50 font-medium">Class ratio & syllabus weighting</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
                 {/* Inline editable total question count */}
                 <div className="flex items-center gap-1 bg-surface border border-border-main rounded-xl px-2 py-1 shadow-inner">
                   <button
@@ -2607,8 +2732,7 @@ function GeneratorControls({
                   >+</button>
                   <span className="text-[9px] text-foreground/40 font-bold ml-0.5">Qs</span>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
+
                 {Object.keys(topicOverrides).length > 0 && (
                   <button
                     onClick={() => setTopicOverrides({})}
@@ -2628,17 +2752,13 @@ function GeneratorControls({
                 >
                   {isCompositionEditMode ? "✓ Done" : "✎ Edit"}
                 </button>
-                {!isCompositionEditMode && (
-                  <span className="text-[9px] bg-brand-800/10 text-brand-800 px-2 py-0.5 rounded-full font-black uppercase">
-                    EDUMERC Compliant
-                  </span>
-                )}
               </div>
             </div>
             
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 flex-1 overflow-y-auto max-h-[420px] pr-1">
               {(() => {
-                const compositions = getComposition(level, qCount);
+                const isSpecialOrMock = paperStyle === "special" || period === "MOCK" || term.toLowerCase().includes("mock");
+                const compositions = getComposition(level, qCount, isSpecialOrMock);
                 let currentStartNum = 1;
                 return compositions.map((comp) => {
                   const startNum = currentStartNum;
@@ -2748,8 +2868,21 @@ function GeneratorControls({
             </div>
           </div>
         )}
+      </div>
 
-        <div className="flex flex-col gap-4 mt-auto">
+      {/* ── COLUMN 3: Generate Section and Paper Appearance ── */}
+      <div className="flex flex-col gap-5 w-full justify-between bg-surface-soft/40 border border-border-main p-5 rounded-2xl shadow-sm">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2.5 border-b border-border-main pb-3">
+            <div className="w-7 h-7 rounded-xl bg-brand-800/10 text-brand-800 flex items-center justify-center font-bold">
+              <Palette className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Paper Appearance & Output</h3>
+              <p className="text-[10px] text-foreground opacity-50 font-medium">Format style, generation & export</p>
+            </div>
+          </div>
+
           <div>
             <label className="sec-label">Paper Appearance</label>
             <div className="grid grid-cols-3 gap-2">
@@ -2762,9 +2895,9 @@ function GeneratorControls({
                   key={s.key}
                   onClick={() => setPaperStyle(s.key)}
                   className={cn(
-                    "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-tighter flex flex-col items-center gap-1.5 border-2 transition-all",
+                    "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-tighter flex flex-col items-center gap-1.5 border-2 transition-all cursor-pointer",
                     paperStyle === s.key
-                      ? "border-brand-800 bg-brand-800/10 text-brand-800"
+                      ? "border-brand-800 bg-brand-800/10 text-brand-800 shadow-sm"
                       : "border-border-main bg-surface-soft text-foreground opacity-50 hover:opacity-100"
                   )}
                 >
@@ -2779,8 +2912,8 @@ function GeneratorControls({
             disabled={isGenerating}
             onClick={handleGenerate}
             className={cn(
-              "w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all font-black uppercase tracking-[0.2em] text-sm disabled:opacity-50 animate-bounce-subtle",
-              theme === 'midnight' ? "bg-brand-500 text-black neon-glow hover:bg-brand-400" : "bg-brand-800 text-white hover:bg-brand-900 shadow-xl"
+              "w-full py-4 rounded-2xl flex items-center justify-center gap-3 transition-all font-black uppercase tracking-[0.2em] text-sm disabled:opacity-50 animate-bounce-subtle cursor-pointer shadow-lg",
+              theme === 'midnight' ? "bg-brand-500 text-black neon-glow hover:bg-brand-400" : "bg-brand-800 text-white hover:bg-brand-900"
             )}
           >
             {isGenerating ? (
@@ -2795,57 +2928,57 @@ function GeneratorControls({
               </>
             )}
           </button>
+        </div>
 
-          <div className="p-4 rounded-xl bg-surface-soft border border-border-main border-dashed">
-             <div className="flex items-center gap-2 mb-2 px-1">
-               <Download className="w-4 h-4 text-brand-800" />
-               <span className="text-[10px] font-black text-foreground opacity-60 uppercase">Export Options</span>
-             </div>
-             <div className="flex flex-col gap-2">
-               <button 
-                 onClick={async () => {
-                    if (!lastRaw) {
-                      alert("Please generate a document first.");
-                      return;
-                    }
-                    try {
-                      const res = await authFetch(`${API_BASE}/api/export/docx`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          mode: mode,
-                          level: level,
-                          subject: subject,
-                          term: term,
-                          question_count: qCount,
-                          content_override: typeof lastRaw === 'string' ? lastRaw : JSON.stringify(lastRaw),
-                          brand_name: "EDUMERC"
-                        })
-                      });
-                      if (!res.ok) throw new Error("Export failed");
-                      const blob = await res.blob();
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${subject}_${level}_Exam.docx`;
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                    } catch(e) {
-                      alert("Export failed. Please try again.");
-                    }
-                 }}
-                 className="w-full py-2 bg-surface border border-border-main rounded-lg text-xs font-bold text-foreground opacity-50 hover:opacity-100 hover:border-brand-800 hover:text-brand-800 transition-all"
-               >
-                 Download Microsoft Word (.docx)
-               </button>
-               <button 
-                 onClick={onPrint}
-                 className="w-full py-2 bg-brand-800 border border-brand-800 rounded-lg text-xs font-bold text-white shadow-lg hover:bg-brand-900 transition-all mt-1"
-               >
-                 Download PDF (Print Format)
-               </button>
-             </div>
-          </div>
+        <div className="p-4 rounded-xl bg-surface-soft border border-border-main border-dashed mt-2">
+           <div className="flex items-center gap-2 mb-2 px-1">
+             <Download className="w-4 h-4 text-brand-800" />
+             <span className="text-[10px] font-black text-foreground opacity-60 uppercase">Export Options</span>
+           </div>
+           <div className="flex flex-col gap-2">
+             <button 
+               onClick={async () => {
+                  if (!lastRaw) {
+                    alert("Please generate a document first.");
+                    return;
+                  }
+                  try {
+                    const res = await authFetch(`${API_BASE}/api/export/docx`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        mode: mode,
+                        level: level,
+                        subject: subject,
+                        term: term,
+                        question_count: qCount,
+                        content_override: typeof lastRaw === 'string' ? lastRaw : JSON.stringify(lastRaw),
+                        brand_name: "EDUMERC"
+                      })
+                    });
+                    if (!res.ok) throw new Error("Export failed");
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${subject}_${level}_Exam.docx`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                  } catch(e) {
+                    alert("Export failed. Please try again.");
+                  }
+               }}
+               className="w-full py-2 bg-surface border border-border-main rounded-lg text-xs font-bold text-foreground opacity-50 hover:opacity-100 hover:border-brand-800 hover:text-brand-800 transition-all cursor-pointer"
+             >
+               Download Microsoft Word (.docx)
+             </button>
+             <button 
+               onClick={onPrint}
+               className="w-full py-2 bg-brand-800 border border-brand-800 rounded-lg text-xs font-bold text-white shadow-lg hover:bg-brand-900 transition-all mt-1 cursor-pointer"
+             >
+               Download PDF (Print Format)
+             </button>
+           </div>
         </div>
       </div>
     </div>
