@@ -1335,10 +1335,10 @@ Return ONLY a valid JSON object in this exact format:
 async def chat_response(message, history):
     """Chat-based pedagogical assistant."""
     client = get_async_openai_client()
-    messages = [{{ "role": "system", "content": "You are the EduQuest Pedagogical Assistant. Help the teacher refine their exam." }}]
+    messages = [{"role": "system", "content": "You are the EduQuest Pedagogical Assistant. Help the teacher refine their exam."}]
     for h in history:
-        messages.append({{ "role": h["role"], "content": h["content"] }})
-    messages.append({{ "role": "user", "content": message }})
+        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+    messages.append({"role": "user", "content": message})
     
     try:
         res = await client.chat.completions.create(model="gpt-4o", messages=messages)
