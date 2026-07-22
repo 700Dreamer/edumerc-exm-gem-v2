@@ -2250,8 +2250,8 @@ function GeneratorControls({
   const [subject, setSubject] = useState(lastConfig?.subject || "Mathematics");
   const [term, setTerm] = useState(lastConfig?.term || "Term 1");
   const [period, setPeriod] = useState("MOT");
-  const [qCount, setQCount] = useState(20);
-  const [duration, setDuration] = useState("2 HR");
+  const [qCount, setQCount] = useState(32);
+  const [duration, setDuration] = useState("2 HR 30 MIN");
   const [paperStyle, setPaperStyle] = useState("uneb_standard");
   const [topic, setTopic] = useState("");
   const [config, setConfig] = useState<any>({ subjects: [], levels: [], syllabus: {} });
@@ -2271,7 +2271,24 @@ function GeneratorControls({
 
   const availableTopics = config.syllabus?.[subject]?.[level] || [];
 
-  // Reset overrides when key parameters change (not qCount — user controls that now)
+  // Auto-adjust default question count and duration to match official paper standards
+  useEffect(() => {
+    const cleanLvl = level.trim().toLowerCase().replace(".", "");
+    const isPrePrimary = cleanLvl.includes("baby") || cleanLvl.includes("middle") || cleanLvl.includes("top");
+    
+    if (isPrePrimary) {
+      setQCount(10);
+      setDuration("1 HR");
+    } else if (subject.toLowerCase() === "mathematics") {
+      setQCount(32);
+      setDuration("2 HR 30 MIN");
+    } else {
+      setQCount(55);
+      setDuration("2 HR 15 MIN");
+    }
+  }, [level, subject]);
+
+  // Reset overrides when key parameters change
   useEffect(() => {
     setTopicOverrides({});
     setIsCompositionEditMode(false);
@@ -2448,7 +2465,9 @@ function GeneratorControls({
     }
 
     let available = [...classTopics];
-    const isLowerClassTopic = compName !== level;
+    const normComp = compName.trim().toLowerCase().replace(".", "");
+    const normLevel = level.trim().toLowerCase().replace(".", "");
+    const isLowerClassTopic = normComp !== normLevel;
     
     if (isLowerClassTopic) {
       // Key Note: Lower class topics picked randomly across the syllabus
