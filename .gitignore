@@ -6,6 +6,7 @@ __MACOSX/
 *.pyc
 .DS_Store
 ingestion_staging.db
+generated papers/
 
 # Environments & Modules
 .venv/

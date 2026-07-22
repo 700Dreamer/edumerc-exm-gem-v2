@@ -185,7 +185,8 @@ async def generate_endpoint(
                 req.mode, req.level, req.subject, req.term, 
                 req.question_count, "Balanced", req.ai_model, "Internal", 
                 req.topic, req.pedagogy_hint, req.force_images,
-                topic_overrides=req.topic_overrides
+                topic_overrides=req.topic_overrides,
+                paper_style=req.paper_style
             )
         
         term_val = req.term

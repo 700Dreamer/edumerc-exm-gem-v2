@@ -94,9 +94,13 @@ async def mock_current_active_user():
             return user
         
         # If no user exists, create a default admin
-        from passlib.context import CryptContext
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        hashed_password = pwd_context.hash("SecurePassword123!")
+        try:
+            from passlib.context import CryptContext
+            pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+            hashed_password = pwd_context.hash("SecurePassword123!")
+        except Exception:
+            import hashlib
+            hashed_password = hashlib.sha256(b"SecurePassword123!").hexdigest()
         
         default_user = User(
             id=uuid.uuid4(),

@@ -473,7 +473,7 @@ def process_tikz_safeguard(raw_text):
     clean_text = re.sub(r'(\\begin\{tikzpicture\}.*?\\end\{tikzpicture\})', r'<script type="text/tikz">\n\1\n</script>', clean_text, flags=re.DOTALL)
     return clean_text
 
-async def generate_ai_content(mode, level, subject, term, num_questions, difficulty="Balanced", ai_model="gpt-4o", internal="Internal", topic="", pedagogy_hint=None, force_images=False, topic_overrides: dict = None):
+async def generate_ai_content(mode, level, subject, term, num_questions, difficulty="Balanced", ai_model="gpt-4o", internal="Internal", topic="", pedagogy_hint=None, force_images=False, topic_overrides: dict = None, paper_style: str = "uneb_standard"):
     """
     Parallel question generation with pedagogical alignment.
     """
