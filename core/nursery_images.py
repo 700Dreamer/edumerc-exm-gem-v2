@@ -25,7 +25,7 @@ IMAGE_PROMPT = (
     "Thick continuous black outlines, pure white fill, no shading, no gradients. "
     "If the prompt describes a scene, include a simple, minimalist background to provide context. "
     "Coloring book style, educational worksheet clip-art for children. "
-    "Highly consistent flat 2D style, no text, perfectly centered."
+    "Highly consistent flat 2D style, no text, perfectly centered. Full frame with margin padding, no edge cropping."
 )
 
 # Common nursery objects we pre-generate

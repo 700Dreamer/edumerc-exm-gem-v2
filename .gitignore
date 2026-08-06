@@ -9,10 +9,14 @@ ingestion_staging.db
 generated papers/
 
 # Environments & Modules
+.venv
 .venv/
+venv/
 node_modules/
 
 # Databases & Large Data
+frontend/public/generated/
+generated papers/
 EduQuest_Syllabus_Database/
 PRIMARY PAPERS/
 marking guide/

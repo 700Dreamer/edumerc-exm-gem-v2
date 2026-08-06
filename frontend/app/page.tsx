@@ -140,8 +140,8 @@ const Header = ({ theme, setTheme, currentPage, setCurrentPage, isLeftSidebarOpe
                     currentPage === "studio" ? "bg-brand-800 text-white shadow-md" : "bg-transparent text-foreground opacity-70 hover:text-brand-800 hover:opacity-100 hover:bg-brand-500/5"
                   )}
                 >
-                  <Sparkles className="w-4 h-4" />
-                  Studio
+                  <FileText className="w-4 h-4" />
+                  EXAM
                 </button>
               )}
               {(isAdmin || isStaff) && (
@@ -563,7 +563,7 @@ function AssessmentView({ theme }: { theme: string }) {
                   <div className="flex gap-3 overflow-x-auto pb-2">
                      {scannedPages.map((page, idx) => (
                        <div key={idx} className="relative min-w-[100px] h-32 bg-slate-100 rounded border border-slate-200 overflow-hidden group">
-                         <img src={page.url} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" alt={`Page ${idx+1}`} />
+                         <img src={page.url} className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity" alt={`Page ${idx+1}`} />
                          <div className="absolute top-1 left-1 bg-slate-900/70 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded">PG {idx+1}</div>
                          <button onClick={() => setScannedPages(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-red-500/90 text-white p-0.5 rounded hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3"/></button>
                        </div>
@@ -1366,6 +1366,11 @@ function StudioView({
           setServerProgress({ title: data.title, sub: data.detail });
         } catch (err) {}
       };
+      es.onerror = () => {
+        if (es) {
+          es.close();
+        }
+      };
     } else {
       setServerProgress(null);
     }
@@ -1620,9 +1625,9 @@ function StudioView({
                  activeTab === tab ? "bg-surface text-brand-800 shadow-sm" : "text-foreground opacity-40 hover:opacity-100"
                )}
              >
-               {tab === 'gen' && 'Generator'}
-               {tab === 'scenario' && 'Scenario'}
-               {tab === 'nursery' && '🧸 ECD'}
+               {tab === 'gen' && 'Primary'}
+               {tab === 'scenario' && 'Secondary'}
+               {tab === 'nursery' && '🧸 Pre-Primary'}
                {tab === 'lib' && 'Library'}
                {tab === 'insights' && 'Insights'}
                {tab === 'chat' && 'Chat'}
@@ -2039,7 +2044,8 @@ function ScenarioView({
   lastConfig
 }: any) {
   const [themeInput, setThemeInput] = useState("");
-  const [level, setLevel] = useState(lastConfig?.level || "Primary 7");
+  const defaultSecLevel = (lastConfig?.level && (lastConfig.level.startsWith("Senior") || lastConfig.level.startsWith("S."))) ? lastConfig.level : "Senior 4";
+  const [level, setLevel] = useState(defaultSecLevel);
   const [subject, setSubject] = useState(lastConfig?.subject || "Mathematics");
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("Standard");
@@ -2054,8 +2060,40 @@ function ScenarioView({
       .catch(() => {});
   }, []);
 
-  const availableSubjects = config.subjects.filter((s: string) => 
-    config.syllabus?.[s]?.[level]
+  const secondaryLevels = (config.levels || []).filter((l: string) => l.startsWith("Senior") || l.startsWith("S."));
+
+  useEffect(() => {
+    if (secondaryLevels.length > 0 && !secondaryLevels.includes(level)) {
+      setLevel(secondaryLevels.includes("Senior 4") ? "Senior 4" : secondaryLevels[0]);
+    }
+  }, [secondaryLevels]);
+
+  const getSyllabusTopics = (subjName: string, lvlName: string) => {
+    if (!config.syllabus || !subjName || !lvlName) return [];
+    if (config.syllabus[subjName]?.[lvlName]) return config.syllabus[subjName][lvlName];
+    
+    const aliasMap: Record<string, string> = {
+      "math": "Mathematics",
+      "science": "Integrated Science",
+      "sst": "Social Studies with Religious Education",
+      "social studies": "Social Studies with Religious Education",
+      "cre": "Christian Religious Education",
+      "ire": "Islamic Religious Education"
+    };
+
+    const target = aliasMap[subjName.toLowerCase()] || subjName;
+    if (config.syllabus[target]?.[lvlName]) return config.syllabus[target][lvlName];
+
+    const keys = Object.keys(config.syllabus);
+    const match = keys.find(k => k.toLowerCase() === subjName.toLowerCase());
+    if (match && config.syllabus[match]?.[lvlName]) return config.syllabus[match][lvlName];
+    return [];
+  };
+
+  const REDUNDANT_ALIASES = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
+
+  const availableSubjects = (config.subjects || []).filter((s: string) => 
+    !REDUNDANT_ALIASES.has(s) && getSyllabusTopics(s, level).length > 0
   );
 
   useEffect(() => {
@@ -2064,12 +2102,13 @@ function ScenarioView({
     }
   }, [level, availableSubjects]);
 
-  const availableTopics = config.syllabus?.[subject]?.[level] || [];
+  const availableTopics = getSyllabusTopics(subject, level);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
+    let itemsContainer: any[] = [];
     try {
-      const res = await authFetch(`${API_BASE}/api/scenario`, {
+      const response = await fetch(`${API_BASE}/api/scenario-stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2082,13 +2121,107 @@ function ScenarioView({
           brand_name: "EDUMERC"
         })
       });
-      const data = await res.json();
-      setPreviewHtml(data.html);
-      setLastRaw(data.raw);
-      setLastConfig({ subject, level, term: `${term} (${period})` });
-      refreshLibrary();
+
+      if (!response.body) {
+        throw new Error("No response body for streaming");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            const jsonStr = trimmed.replace("data: ", "");
+            try {
+              const event = JSON.parse(jsonStr);
+              if (event.event_type === "header_ready") {
+                setPreviewHtml(`
+                  <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px;">
+                      <h2 style="margin: 0; font-size: 20px;">${event.title}</h2>
+                      <p style="margin: 4px 0 0 0; font-size: 13px; color: #555;">Duration: ${event.duration} | Total Marks: ${event.total_marks}</p>
+                    </div>
+                    <div id="streaming-items-canvas" style="display: flex; flex-direction: column; gap: 20px;">
+                      <div id="item-skeleton" style="padding: 15px; border: 1px dashed #3b82f6; border-radius: 6px; background: #eff6ff; text-align: center; font-size: 13px; color: #1d4ed8; font-weight: bold; animation: pulse 1.5s infinite;">
+                        Agentic Engine: Drafting Item 1 with 100% ${subject} domain isolation...
+                      </div>
+                    </div>
+                  </div>
+                `);
+              } else if (event.event_type === "item_generating") {
+                const skel = document.getElementById("item-skeleton");
+                if (skel) {
+                  skel.innerText = `Agentic Engine: Drafting & Validating Item ${event.item_number} with ${subject} blueprint...`;
+                }
+              } else if (event.event_type === "item_verified") {
+                itemsContainer.push(event.item_json);
+                const skel = document.getElementById("item-skeleton");
+                if (skel) {
+                  const itemDiv = document.createElement("div");
+                  itemDiv.className = "verified-item-box";
+                  itemDiv.style.border = "1px solid #e2e8f0";
+                  itemDiv.style.borderRadius = "8px";
+                  itemDiv.style.padding = "16px";
+                  itemDiv.style.marginBottom = "16px";
+                  itemDiv.style.backgroundColor = "#ffffff";
+                  itemDiv.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:12px; color:#16a34a; font-weight:bold;">
+                      <span style="display:flex; align-items:center; gap:4px;">
+                        <svg style="width:14px; height:14px; stroke:currentColor;" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Item ${event.item_number} Verified (${subject})
+                      </span>
+                      <span style="background:#dcfce7; padding:2px 8px; border-radius:12px;">Programmatic Check Passed</span>
+                    </div>
+                    ${event.item_html}
+                  `;
+                  skel.parentNode?.insertBefore(itemDiv, skel);
+                }
+              } else if (event.event_type === "paper_complete") {
+                setPreviewHtml(event.html);
+                setLastRaw(event.raw);
+                setLastConfig({ subject, level, term: `${term} (${period})` });
+                refreshLibrary();
+              }
+            } catch (err) {
+              console.error("SSE parse error", err);
+            }
+          }
+        }
+      }
     } catch (e) {
-      alert("Scenario generation failed.");
+      console.warn("SSE stream failed, falling back to standard endpoint", e);
+      try {
+        const res = await authFetch(`${API_BASE}/api/scenario`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            theme: themeInput,
+            topic,
+            difficulty,
+            level,
+            subject,
+            term: `${term} (${period})`,
+            brand_name: "EDUMERC"
+          })
+        });
+        const data = await res.json();
+        setPreviewHtml(data.html);
+        setLastRaw(data.raw);
+        setLastConfig({ subject, level, term: `${term} (${period})` });
+        refreshLibrary();
+      } catch (err) {
+        alert("Scenario generation failed.");
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -2104,9 +2237,7 @@ function ScenarioView({
             onChange={(e) => { setLevel(e.target.value); setTopic(""); }}
             className="w-full bg-surface-soft border border-border-main rounded-xl p-3 text-xs font-bold outline-none appearance-none cursor-pointer"
           >
-            {config.levels
-              .filter((l: string) => !["Baby Class", "Middle Class", "Top Class"].includes(l))
-              .map((l: string) => <option key={l}>{l}</option>)}
+            {secondaryLevels.map((l: string) => <option key={l}>{l}</option>)}
           </select>
         </div>
         <div>
@@ -2189,11 +2320,11 @@ function ScenarioView({
       </div>
 
       <div>
-        <label className="sec-label">Narrative Context (Optional)</label>
+        <label className="sec-label">Scenario Context / Theme (Secondary Items)</label>
         <textarea 
           value={themeInput}
           onChange={(e) => setThemeInput(e.target.value)}
-          placeholder="e.g. A busy town market, construction site, farming scenario..."
+          placeholder="e.g. A driver traveling on highway, sports match collision, local market vendor..."
           className="w-full bg-surface-soft border-2 border-border-main rounded-2xl p-4 text-xs font-bold font-main outline-none focus:border-brand-500 transition-all min-h-[100px]"
         />
       </div>
@@ -2210,7 +2341,7 @@ function ScenarioView({
           </>
         ) : (
           <>
-            <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
+            <FileText className="w-5 h-5 group-hover:scale-110 transition-transform" />
             GENERATE TARGETED SCENARIO
           </>
         )}
@@ -2246,7 +2377,8 @@ function GeneratorControls({
   hasPreview
 }: any) {
   const [mode, setMode] = useState<Mode>("Exams");
-  const [level, setLevel] = useState(lastConfig?.level || "Primary 7");
+  const defaultPriLevel = (lastConfig?.level && (lastConfig.level.startsWith("Primary") || lastConfig.level.startsWith("P."))) ? lastConfig.level : "Primary 7";
+  const [level, setLevel] = useState(defaultPriLevel);
   const [subject, setSubject] = useState(lastConfig?.subject || "Mathematics");
   const [term, setTerm] = useState(lastConfig?.term || "Term 1");
   const [period, setPeriod] = useState("MOT");
@@ -2265,11 +2397,43 @@ function GeneratorControls({
       .catch(() => {});
   }, []);
 
-  const availableSubjects = config.subjects.filter((s: string) =>
-    config.syllabus?.[s]?.[level]
+  const primaryLevels = (config.levels || []).filter((l: string) => l.startsWith("Primary") || l.startsWith("P."));
+
+  useEffect(() => {
+    if (primaryLevels.length > 0 && !primaryLevels.includes(level)) {
+      setLevel(primaryLevels.includes("Primary 7") ? "Primary 7" : primaryLevels[0]);
+    }
+  }, [primaryLevels]);
+
+  const getSyllabusTopics = (subjName: string, lvlName: string) => {
+    if (!config.syllabus || !subjName || !lvlName) return [];
+    if (config.syllabus[subjName]?.[lvlName]) return config.syllabus[subjName][lvlName];
+    
+    const aliasMap: Record<string, string> = {
+      "math": "Mathematics",
+      "science": "Integrated Science",
+      "sst": "Social Studies with Religious Education",
+      "social studies": "Social Studies with Religious Education",
+      "cre": "Christian Religious Education",
+      "ire": "Islamic Religious Education"
+    };
+
+    const target = aliasMap[subjName.toLowerCase()] || subjName;
+    if (config.syllabus[target]?.[lvlName]) return config.syllabus[target][lvlName];
+
+    const keys = Object.keys(config.syllabus);
+    const match = keys.find(k => k.toLowerCase() === subjName.toLowerCase());
+    if (match && config.syllabus[match]?.[lvlName]) return config.syllabus[match][lvlName];
+    return [];
+  };
+
+  const REDUNDANT_ALIASES = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
+
+  const availableSubjects = (config.subjects || []).filter((s: string) =>
+    !REDUNDANT_ALIASES.has(s) && getSyllabusTopics(s, level).length > 0
   );
 
-  const availableTopics = config.syllabus?.[subject]?.[level] || [];
+  const availableTopics = getSyllabusTopics(subject, level);
 
   // Auto-adjust default question count and duration to match official paper standards
   useEffect(() => {
@@ -2487,25 +2651,12 @@ function GeneratorControls({
     }
 
     const result = [];
-    let currentQ = startNum;
-    let remaining = alloc;
-    const chunkSize = 10;
-
-    while (remaining > 0) {
-      const size = Math.min(chunkSize, remaining);
-      const topicsLen = available.length;
-      const questionsPerTopic = Math.max(1, size / topicsLen);
-
-      for (let i = 0; i < size; i++) {
-        const topicIdx = Math.min(Math.floor(i / questionsPerTopic), topicsLen - 1);
-        result.push({
-          qNum: currentQ + i,
-          topic: available[topicIdx]
-        });
-      }
-
-      currentQ += size;
-      remaining -= size;
+    for (let i = 0; i < alloc; i++) {
+      const topicIdx = (i) % available.length;
+      result.push({
+        qNum: startNum + i,
+        topic: available[topicIdx]
+      });
     }
 
     return result;
@@ -2565,11 +2716,20 @@ function GeneratorControls({
         })
       });
 
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
 
-      if (data.error) {
+      if (!data) {
+        throw new Error("Server returned an empty or invalid response.");
+      }
+
+      if (data?.error) {
         alert("Generation error: " + data.error);
+        return;
+      }
+
+      if (data?.detail) {
+        const detailMsg = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
+        alert("Generation error: " + detailMsg);
         return;
       }
 
@@ -2579,7 +2739,8 @@ function GeneratorControls({
       refreshLibrary();
 
       // ── IMAGE NEEDS AGENT: Auto-run after generation ──
-      const finalQuestions = data.raw ? JSON.parse(data.raw)?.questions ?? [] : [];
+      const rawObj = typeof data.raw === 'string' ? JSON.parse(data.raw) : data.raw;
+      const finalQuestions = rawObj?.questions ?? [];
       if (finalQuestions.length > 0) {
         setIsAnalyzingImageNeeds(true);
         try {
@@ -2613,8 +2774,8 @@ function GeneratorControls({
           setIsAnalyzingImageNeeds(false);
         }
       }
-    } catch (e) {
-      alert("Generation failed. Please try again.");
+    } catch (e: any) {
+      alert("Generation failed: " + (e?.message || "Please try again."));
     } finally {
       setIsGenerating(false);
     }
@@ -2645,9 +2806,7 @@ function GeneratorControls({
               onChange={(e) => { setLevel(e.target.value); setTopic(""); }}
               className="w-full bg-surface-soft border border-border-main rounded-xl p-2.5 text-xs font-bold outline-none focus:border-brand-800 transition-colors"
             >
-              {config.levels
-                .filter((l: string) => !["Baby Class", "Middle Class", "Top Class"].includes(l))
-                .map((l: string) => <option key={l}>{l}</option>)}
+              {primaryLevels.map((l: string) => <option key={l}>{l}</option>)}
             </select>
           </div>
           <div>
@@ -2825,17 +2984,19 @@ function GeneratorControls({
                         </div>
                       </div>
 
-                      {/* READ MODE: grouped topic → Q-range */}
+                      {/* READ MODE: sequential question topic mapping e.g. Q1: Percentages (P.7) */}
                       {!isCompositionEditMode && (
-                        <div className="flex flex-col gap-1.5 pl-3.5 mt-1">
-                          {Object.entries(topicGroups).map(([topicName, qNums]) => (
-                            <div key={topicName} className="flex justify-between items-start gap-4 text-[10px] py-0.5">
-                              <span className="font-semibold text-foreground/70 leading-tight flex-1">{topicName}</span>
-                              <span className="font-black text-brand-800 bg-brand-800/10 border border-brand-800/20 px-2 py-0.5 rounded-md whitespace-nowrap font-mono text-[9px]">
-                                {formatQNums(qNums)}
-                              </span>
-                            </div>
-                          ))}
+                        <div className="flex flex-col gap-1 pl-3.5 mt-1">
+                          {resolvedMappings.map(item => {
+                            const classCode = comp.name.replace("Primary ", "P.").replace("Senior ", "S.");
+                            return (
+                              <div key={item.qNum} className="flex items-center gap-1.5 text-[10px] py-0.5 border-b border-border-main/10 last:border-0">
+                                <span className="font-bold text-brand-800 font-mono text-[9.5px]">Q{item.qNum}:</span>
+                                <span className="font-semibold text-foreground/80 leading-tight flex-1">{item.topic}</span>
+                                <span className="text-[9px] font-bold text-foreground/50 font-mono bg-surface border border-border-main/40 px-1.5 py-0.2 rounded">({classCode})</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
 
@@ -2897,33 +3058,8 @@ function GeneratorControls({
               <Palette className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Paper Appearance & Output</h3>
-              <p className="text-[10px] text-foreground opacity-50 font-medium">Format style, generation & export</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="sec-label">Paper Appearance</label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { key: "elite_dark", label: "Elite Dark", color: "bg-brand-800" },
-                { key: "pro_protocol", label: "Pro Protocol", color: "bg-slate-800" },
-                { key: "uneb_standard", label: "UNEB Classic", color: "bg-black" }
-              ].map(s => (
-                <button
-                  key={s.key}
-                  onClick={() => setPaperStyle(s.key)}
-                  className={cn(
-                    "py-2.5 rounded-xl text-[9px] font-black uppercase tracking-tighter flex flex-col items-center gap-1.5 border-2 transition-all cursor-pointer",
-                    paperStyle === s.key
-                      ? "border-brand-800 bg-brand-800/10 text-brand-800 shadow-sm"
-                      : "border-border-main bg-surface-soft text-foreground opacity-50 hover:opacity-100"
-                  )}
-                >
-                  <div className={`w-5 h-3 rounded-sm ${s.color}`} />
-                  {s.label}
-                </button>
-              ))}
+              <h3 className="text-xs font-black text-foreground uppercase tracking-wider">Generation & Output</h3>
+              <p className="text-[10px] text-foreground opacity-50 font-medium">Generation & export actions</p>
             </div>
           </div>
 

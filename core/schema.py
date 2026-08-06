@@ -72,7 +72,7 @@ def get_nursery_schema(class_level: str, learning_area: str) -> type[BaseModel]:
         
         
     class ExamSchema(BaseModel):
-        questions: List[Question] = Field(..., description="List of precisely 8 questions")
+        questions: List[Question] = Field(..., description="List of questions matching official paper structure")
         
     return ExamSchema
 

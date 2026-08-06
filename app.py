@@ -153,7 +153,7 @@ DEFAULTS = {
     "tone":          "Academic and traditional",
     "inc_mcq":       False,
     "inc_essay":     False,
-    "ai_model":      "gpt-4o",
+    "ai_model":      "gpt-5",
     "brand_name":    "EDUMERC",
     "duration":      "2 HR 30 MIN",
     "question_count": 20,
@@ -176,7 +176,7 @@ c1, c2 = st.columns([1, 2.8])
 # LEFT PANEL
 # ────────────────────────────────────────────────────────────────────────
 with c1:
-    tab_gen, tab_lib, tab_analytics = st.tabs(["Generator", "Library", "Insights"])
+    tab_gen, tab_lib, tab_analytics = st.tabs(["Primary", "Library", "Insights"])
 
     # ─────────────────────────────────────
     # TAB 1: GENERATOR

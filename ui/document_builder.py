@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from jinja2 import Environment, FileSystemLoader
 from core.paper_structure import get_paper_structure
 
@@ -11,6 +12,26 @@ if os.path.exists(templates_dir):
 else:
     jinja_env = None
 
+def safe_int(val, default=0):
+    if isinstance(val, int):
+        return val
+    if isinstance(val, str):
+        nums = re.findall(r'\d+', val)
+        if nums:
+            return int(nums[0])
+    return default
+
+def build_examiners_table_rows(total_q_count):
+    if not total_q_count or total_q_count <= 0:
+        total_q_count = 50
+    step = 10 if total_q_count > 30 else 5
+    rows = []
+    for start in range(1, total_q_count + 1, step):
+        end = min(start + step - 1, total_q_count)
+        label = f"{start}" if start == end else f"{start}-{end}"
+        rows.append(label)
+    rows.append("TOTAL")
+    return "".join([f"<tr><td>{r}</td><td></td><td></td></tr>" for r in rows])
 
 def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, duration, school_name, brand_name, question_count, content_raw, topic="", logo_b64=None, paper_style="uneb_standard", view_mode="scroll"):
     """
@@ -20,8 +41,7 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     title_text = f"{exam_type} {term_roman} EXAMINATIONS {exam_year}".upper() if mode == "Exams" else f"{subject} | {topic}".upper()
     
     # ── BUILD SCORING TABLE ──
-    rows = ["1-10", "11-20", "21-30", "31-40", "41-45", "46-50", "51-55", "TOTAL"]
-    exam_rows = "".join([f"<tr><td>{r}</td><td></td><td></td></tr>" for r in rows])
+    exam_rows = build_examiners_table_rows(question_count)
 
     right_col = f"""<div class="ex-panel">
         <div style="font-size:11px; font-weight:bold; text-align:center; border:1px solid #000; border-bottom:none; padding:4px;">FOR EXAMINER'S USE ONLY</div>
@@ -60,23 +80,19 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     </div>"""
 
     # ── BUILD SYLLABUS ANALYSIS ──
-    topic_map = {}
+    q_topic_list = []
     if mode == "Exams":
         try:
             data_raw = json.loads(content_raw)
             for q in data_raw.get("questions", []):
                 t = q.get("topic", "General Core")
                 num = q.get("number", "?")
-                origin = q.get("origin_class")
-                label = f"Q{num}"
-                if origin and origin.lower() != level.lower():
-                    short_origin = origin.replace("Primary ", "P.").replace("Senior ", "S.")
-                    label = f"Q{num} ({short_origin})"
-                if t not in topic_map: topic_map[t] = []
-                topic_map[t].append(label)
+                origin = q.get("origin_class") or level
+                short_origin = origin.replace("Primary ", "P.").replace("Senior ", "S.")
+                q_topic_list.append((num, t, short_origin))
         except: pass
     
-    syllabus_rows = "".join([f"<tr><td style='padding:4px; border-bottom:0.5px solid #eee;'>{t}</td><td style='text-align:center; padding:4px; border-bottom:0.5px solid #eee;'>{len(qs)}</td><td style='padding:4px; border-bottom:0.5px solid #eee; font-weight:700;'>{', '.join(qs)}</td></tr>" for t, qs in topic_map.items()])
+    syllabus_rows = "".join([f"<tr><td style='padding:4px; border-bottom:0.5px solid #eee; font-weight:700;'>Q{num}: {t}</td><td style='text-align:right; padding:4px; border-bottom:0.5px solid #eee; font-weight:700; opacity:0.7;'>({origin})</td></tr>" for num, t, origin in q_topic_list])
     syllabus_table = f"""
     <div style="margin-top: 30px; border: 1px solid #000; border-radius:0; padding: 15px;">
         <div style="font-size: 11px; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 10px; display:flex; justify-content:space-between;">
@@ -86,13 +102,12 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
             <thead>
                 <tr style="background:#f8fafc; border-bottom: 1px solid #000;">
-                    <th style="text-align: left; padding: 6px;">Curriculum Topic / Theme</th>
-                    <th style="width: 80px; padding: 6px;">Questions</th>
-                    <th style="text-align: left; padding: 6px;">Reference Map</th>
+                    <th style="text-align: left; padding: 6px;">Question & Topic Mapping</th>
+                    <th style="text-align: right; padding: 6px; width: 120px;">Syllabus Origin</th>
                 </tr>
             </thead>
             <tbody>
-                {syllabus_rows if syllabus_rows else "<tr><td colspan='3' style='text-align:center; padding:20px; color:#94a3b8;'>Processing Coverage Data...</td></tr>"}
+                {syllabus_rows if syllabus_rows else "<tr><td colspan='2' style='text-align:center; padding:20px; color:#94a3b8;'>Processing Coverage Data...</td></tr>"}
             </tbody>
         </table>
     </div>
@@ -119,8 +134,8 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
             questions = data.get("questions", [])
 
             # Separate into Section A and Section B lists
-            sec_a_qs = [q for q in questions if int(q.get("number", 0)) <= sec_a_count]
-            sec_b_qs = [q for q in questions if int(q.get("number", 0)) > sec_a_count]
+            sec_a_qs = [q for q in questions if safe_int(q.get("number", 0)) <= sec_a_count]
+            sec_b_qs = [q for q in questions if safe_int(q.get("number", 0)) > sec_a_count]
 
             if sec_a_qs:
                 current_instruction = None
@@ -192,7 +207,8 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
                 parsed_html += f"</tr>"
                 
             parsed_html += "</tbody></table>"
-    except json.JSONDecodeError:
+    except Exception as e:
+        print(f"Error building document HTML: {e}")
         parsed_html = content_raw
         marking_guide_parsed_html = content_raw
         answer_key_html = "<tr><td colspan='3'>JSON Error. Manual marking required.</td></tr>"
@@ -373,7 +389,50 @@ body {{
 </div>
 """
     else:
-        document_body = f"""
+        is_sec = any(x in str(level) for x in ["Senior", "S.1", "S.2", "S.3", "S.4", "S.5", "S.6"])
+        if is_sec:
+            short_lvl = level.replace("Senior ", "S.").replace("Primary ", "P.")
+            sec_b_note_str = sec_b_note if sec_b_note else f"Respond to only two items."
+            document_body = f"""
+<!-- SECONDARY UCE COMPETENCY ASSESSMENT PAPER -->
+<div class="page" id="mainP">
+  <!-- NAME & STREAM HEADER LINE -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:14px; font-family:'Times New Roman', serif; margin-bottom:25px; border-bottom:1px solid #000; padding-bottom:6px;">
+    <div style="display:flex; flex:3; align-items:flex-end;">
+      <span style="font-weight:bold;">NAME:</span> 
+      <div style="flex:1; border-bottom:1px solid #000; margin-left:8px; height:15px;"></div>
+    </div>
+    <div style="display:flex; flex:1; align-items:flex-end; margin-left:40px;">
+      <span style="font-weight:bold;">STREAM:</span> 
+      <div style="flex:1; border-bottom:1px solid #000; margin-left:8px; height:15px;"></div>
+    </div>
+  </div>
+
+  <!-- TITLE BLOCK -->
+  <div style="text-align:center; font-family:'Times New Roman', serif; margin-bottom:25px; line-height:1.4;">
+    <div style="font-size:17px; font-weight:bold;">Uganda Certificate of Education</div>
+    <div style="font-size:15px; font-weight:bold; text-transform:uppercase; margin-top:4px;">{exam_type} {term_roman} ASSESSMENT {exam_year}</div>
+    <div style="font-size:17px; font-weight:bold; text-transform:uppercase; margin-top:4px;">{short_lvl} {subject.upper()}</div>
+    <div style="font-size:15px; font-weight:bold; margin-top:4px;">Paper 1</div>
+    <div style="font-size:14px; margin-top:4px;">{official_duration}</div>
+  </div>
+
+  <!-- INSTRUCTIONS TO CANDIDATES -->
+  <div style="font-family:'Times New Roman', serif; margin-bottom:25px; line-height:1.6;">
+    <div style="font-weight:bold; font-size:14.5px; margin-bottom:4px;">INSTRUCTIONS TO CANDIDATES:</div>
+    <div style="font-style:italic; font-size:14px;">
+      This paper consists of {sec_b_count if sec_b_count > 0 else question_count} items;<br/>
+      {sec_b_note_str}
+    </div>
+  </div>
+
+  <div class="body-c" id="content-body">
+    {parsed_html}
+  </div>
+</div>
+"""
+        else:
+            document_body = f"""
 <!-- PAGE 1: HEADER -->
 <div class="page" id="mainP">
   <div class="brand-h">
@@ -616,11 +675,9 @@ document.addEventListener("DOMContentLoaded", function() {{
         footerDiv.style.fontFamily = '"Times New Roman", Times, serif';
         
         if (i < allPages.length - 1) {{
-            // Intermediate pages get "Turn Over" on the right
-            footerDiv.innerHTML = `<span></span><span style="font-style:italic; font-weight:bold; font-size:16px;">Turn Over</span>`;
+            footerDiv.innerHTML = '<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:15px; font-weight:bold; font-family:\'Times New Roman\', serif;">' + (i + 1) + '</span><span style="flex:1; text-align:right; font-style:italic; font-weight:bold; font-size:15px; font-family:\'Times New Roman\', serif;">Turn Over</span>';
         }} else {{
-            // Last page gets END
-            // footerDiv.innerHTML = `<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:18px; font-weight:bold;">....SUCCESS!....</span><span style="flex:1;"></span>`;
+            footerDiv.innerHTML = '<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:15px; font-weight:bold; font-family:\'Times New Roman\', serif;">' + (i + 1) + '</span><span style="flex:1; text-align:right; font-weight:bold; font-size:15px; font-family:\'Times New Roman\', serif;">END</span>';
         }}
         page.appendChild(footerDiv);
     }}
@@ -869,8 +926,7 @@ def build_header_html(mode, exam_type, level, subject, term_roman, exam_year, du
     # Fallback legacy implementation
     title_text = f"{exam_type} {term_roman} Examination {exam_year}" if mode == "Exams" else f"{subject} | {topic}"
     
-    rows = ["1-10", "11-20", "21-30", "31-40", "41-45", "46-50", "51-55", "TOTAL"]
-    exam_rows = "".join([f"<tr><td>{r}</td><td></td><td></td></tr>" for r in rows])
+    exam_rows = build_examiners_table_rows(question_count)
     right_col = f"""<div class="ex-panel"><table><tr><th>Question</th><th>Marks</th><th>EXR'S</th></tr>{exam_rows}</table></div>"""
     
     ps = get_paper_structure(subject, level)
@@ -1043,6 +1099,7 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
             marks_int = 1
             
         is_math = any(s in subject.lower() for s in ["math", "mathematics", "numeracy"])
+        is_secondary = any(x in str(level) for x in ["Senior", "S.1", "S.2", "S.3", "S.4", "S.5", "S.6"])
         
         tmpl_name = "marking_guide_question.html" if is_marking_guide else "question.html"
         template = jinja_env.get_template(tmpl_name)
@@ -1066,6 +1123,10 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
             marks=marks_int,
             is_two_col_math=is_two_col_math,
             is_math=is_math,
+            is_secondary=is_secondary,
+            hint=q.get("hint"),
+            support=q.get("support"),
+            task_heading=q.get("task_heading"),
             diagram_url=diagram_url,
             answer=ans,
             working_columns=working_columns,

@@ -13,18 +13,17 @@ template: |
 
   ### PEDAGOGICAL & COGNITIVE CONSTRAINTS:
   1. TARGET AUDIENCE: {age_profile}.
-  2. STRICT COGNITIVE CEILING: The authorized topics are strictly: [{authorized_topics_str}]. Do not exceed these. If a retrieved Syllabus Context (RAG) chunk contains details or sub-topics that fall outside this authorized topics list, you MUST ignore those details and strictly stay within the specified list.
-  3. BLOOM'S TAXONOMY & ANTI-CRAMMING PROTOCOL: 10% Knowledge (Recall), 60% Application/Analysis, 30% Synthesis/Evaluation. You MUST test for deep understanding, not rote memorization ("cram work"). Avoid direct "Define X" or "List Y" questions where possible. Instead:
-     - SCENARIO-FIRST DESIGN: Wrap ALMOST ALL questions in rich, localized real-world scenarios. Make the student apply their knowledge to solve a practical problem (e.g., helping a farmer calculate yields, a nurse measuring medicine, a market vendor finding change, or a child figuring out a puzzle). Avoid abstract, "naked" questions.
-     - Present flawed arguments or incorrect mathematical working and ask the student to identify/correct the flaw.
-     - Ask "why" or "how" a phenomenon occurs, not just "what" it is.
-  4. AUTHENTIC UGANDAN EXAMINER PERSONA: You are a strict Ugandan teacher setting a national exam. You MUST adhere to these exact stylistic rules:
+  2. STRICT SUBJECT DOMAIN ISOLATION (CRITICAL): All questions MUST strictly belong to the subject: {subject}.
+     - IF SUBJECT IS ENGLISH: EVERY single question MUST test English language competencies (Grammar, Vocabulary, Punctuation, Root Words, Sentence Transformation, Reading Comprehension, Composition, or Letter Writing). You MUST NOT include math calculations, science questions, or social studies trivia (like rivers, presidents, hoes, or crop rotation) in an English paper!
+     - IF SUBJECT IS MATHEMATICS: EVERY question MUST test numerical reasoning and math.
+     - IF SUBJECT IS SCIENCE: EVERY question MUST test science concepts.
+     - IF SUBJECT IS SOCIAL STUDIES (SST): EVERY question MUST test geography, history, or civics.
+  3. BLOOM'S TAXONOMY & ANTI-CRAMMING PROTOCOL: 10% Knowledge (Recall), 60% Application/Analysis, 30% Synthesis/Evaluation. Test for deep understanding matching the cognitive level of {level}.
+  4. AUTHENTIC UGANDAN EXAMINER PERSONA: You are a strict Ugandan teacher setting a national exam. Adhere to these exact stylistic rules:
      {authoritative_commands_rule}
-     - EXTREME LOCALIZATION: You MUST use Ugandan names (e.g., Kato, Babirye, Mukasa, Namubiru), items (pangas, slashers, hoes, jerrycans), foods (matooke, cassava, posho, mangoes), and currencies (shs. or UGX). Never use apples, snow, dollars, or John/Alice.
-     - VISUAL/ACTION TASKS: If the level is P1-P3, frequently use "Draw a set of..." or "Name the..." referring to a visual object. Use the 'needs_student_drawing' flag heavily for these.
+     - LOCALIZATION: Use Ugandan names (e.g., Kato, Babirye, Mukasa, Namubiru) and realistic Ugandan contexts appropriate for {subject}.
      - NO ROMAN NUMERALS: Never use Roman Numerals (i, ii, iii) for sub-question labels. Always use letters (a, b, c).
-     - NO INLINE ANSWER LINES: NEVER generate underscores or lines like "________" in the text for the student to write on. The system handles answer spacing automatically.
-  5. ITEM RIGOR: Language must be direct, simple, and formal. Avoid excessively wordy setups, but ensure the scenario is rich enough to test application rather than pure recall. Story-based math and science questions are highly encouraged!{prep_req}
+  5. ITEM RIGOR: Language must be direct, simple, and formal. Avoid excessively wordy setups.{prep_req}
 
   ### FORMATTING PROTOCOL:
   - Return ONLY a valid JSON object.

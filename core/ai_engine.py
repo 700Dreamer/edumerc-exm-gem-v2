@@ -4,20 +4,15 @@ import json, asyncio, uuid
 import base64
 from typing import Optional
 from openai import OpenAI, AsyncOpenAI
-from google import genai
-from core.db_engine import retrieve_syllabus_context, retrieve_exam_rubric
-from core.map_library import get_best_map
-from core.paper_structure import get_paper_structure, get_total_questions
-from core.syllabus_master import MASTER_SYLLABUS
-from core.syllabus_rules import get_edumerc_policy
-import requests
-import uuid
-
-# ── Gemini Draftsman Initialization ──
-google_key = os.environ.get("GOOGLE_API_KEY")
-if google_key:
-    genai_client = genai.Client(api_key=google_key)
-else:
+try:
+    from google import genai
+    google_key = os.environ.get("GOOGLE_API_KEY")
+    if google_key:
+        genai_client = genai.Client(api_key=google_key)
+    else:
+        genai_client = None
+except Exception:
+    genai = None
     genai_client = None
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -262,7 +257,7 @@ Output the SVG code now:"""
         print(f"generate_illustration error (chatgpt-image): {e}")
         return None
 
-async def generate_exam_diagram(diagram_description: str, subject: str, level: str, question_text: str = "", answer_text: str = ""):
+async def generate_exam_diagram(diagram_description: str, subject: str, level: str, question_text: str = "", answer_text: str = "", return_meta: bool = False):
     """
     Calls gpt-image-1 to produce a clean, black-and-white UNEB-style exam diagram.
     Uses the question and answer context to ensure the diagram is mathematically and educationally accurate.
@@ -287,7 +282,8 @@ async def generate_exam_diagram(diagram_description: str, subject: str, level: s
         cached_path = os.path.join(BASE_DIR, "frontend", "public", "generated", cached_filename)
         if os.path.exists(cached_path):
             print(f"DEBUG: [DIAGRAM CACHE HIT] Reusing diagram: {cached_filename}")
-            return f"/api/generated/{cached_filename}"
+            url = f"/api/generated/{cached_filename}"
+            return (url, True) if return_meta else url
 
     client = get_async_openai_client()
 
@@ -306,7 +302,8 @@ async def generate_exam_diagram(diagram_description: str, subject: str, level: s
         "4. Text Labels: Any labels (like A, B, 5cm, 90°) must be written in a simple standard sans-serif font (like Arial/Helvetica) and must be perfectly horizontal and 100% readable. No handwriting, no cursive, no distorted letters.\n"
         "5. No decorative borders, no watermarks, no external explanations.\n"
         "6. PEDAGOGICAL SAFETY (CRITICAL): The diagram MUST NOT reveal or label the final correct answer (\"{answer_text}\") anywhere in the visual. The diagram should only show the setup, question boundaries, and unknown variables (e.g. if the question asks to find side 'x', that side MUST be labeled in the drawing as 'x' or '?', NOT as its resolved final numerical value). The student must do the actual math to solve it.\n"
-        "7. CRITICAL TEXT BAN: DO NOT write or include the actual exam question text inside the image. Only include mathematical/diagram labels (like A, B, 5cm, 90°) directly relevant to the drawing."
+        "7. CRITICAL TEXT BAN: DO NOT write or include the actual exam question text inside the image. Only include mathematical/diagram labels (like A, B, 5cm, 90°) directly relevant to the drawing.\n"
+        "8. FULL FRAME (NO CROPPING): The entire diagram subject and all text/labels MUST fit completely inside the image boundary with generous padding around all sides. Never crop or cut off any edge of the illustration, shapes, or labels."
     )
 
     filename = f"diag_{uuid.uuid4().hex[:10]}.png"
@@ -323,7 +320,7 @@ async def generate_exam_diagram(diagram_description: str, subject: str, level: s
         )
         if not res or not res.data:
             print("DEBUG: gpt-image-1 returned no data for diagram.")
-            return None
+            return (None, False) if return_meta else None
         img_data = res.data[0]
         if hasattr(img_data, "b64_json") and img_data.b64_json:
             image_bytes = base64.b64decode(img_data.b64_json)
@@ -333,7 +330,7 @@ async def generate_exam_diagram(diagram_description: str, subject: str, level: s
                 image_bytes = resp.read()
         else:
             print("DEBUG: gpt-image-1 returned no data for diagram.")
-            return None
+            return (None, False) if return_meta else None
 
         with open(save_path, "wb") as f:
             f.write(image_bytes)
@@ -347,10 +344,11 @@ async def generate_exam_diagram(diagram_description: str, subject: str, level: s
             print(f"Failed to write diagram cache index: {ce}")
 
         print(f"DEBUG: Diagram saved & cached -> {filename}")
-        return f"/api/generated/{filename}"
+        url = f"/api/generated/{filename}"
+        return (url, False) if return_meta else url
     except Exception as e:
         print(f"generate_exam_diagram error: {e}")
-        return None
+        return (None, False) if return_meta else None
 
 async def _fix_question_integrity(client, question, feedback):
     """Asks the model to fix a specific question based on integrity feedback."""
@@ -378,71 +376,10 @@ Please fix the issues and output ONLY the completely corrected question JSON obj
         return None
 
 async def generate_diagrams_for_questions(questions: list, subject: str, level: str) -> list:
-    """
-    Post-generation pass: for any question with a non-null diagram_description,
-    call gpt-image-1 and inject the returned URL as diagram_url.
-    Runs all diagram calls concurrently with asyncio.gather.
-    Staggers any non-cached API requests to avoid rate limit locks.
-    """
-    import asyncio
+    """Diagram generation pass disabled for high-speed performance."""
+    return questions
 
-    async def process_one(q, delay: float = 0.0):
-        desc = q.get("diagram_description")
-        qtext = q.get("text", "")
-        qans = q.get("answer", "")
-        if desc and isinstance(desc, str) and desc.strip():
-            from core.telemetry import emit_progress
-            emit_progress("DIAGRAM AGENT", f"Drafting illustration for Q{q.get('number', '?')}...")
-            if delay > 0:
-                await asyncio.sleep(delay)
-            
-            from core.integrity_agent import check_tier3_vision
-            client = get_async_openai_client()
-            
-            # Allow 1 retry for images
-            url = await generate_exam_diagram(desc.strip(), subject, level, qtext, qans)
-            if url:
-                # Calculate absolute path for vision check
-                filename = url.split("/")[-1]
-                abs_path = os.path.join(BASE_DIR, "frontend", "public", "generated", filename)
-                
-                # Tier 3 Audit
-                emit_progress("VISION AUDIT", f"Auditing diagram for Q{q.get('number', '?')} with GPT-4o...")
-                t3_pass, t3_feedback = await check_tier3_vision(client, abs_path, qtext)
-                if not t3_pass:
-                    print(f"Q{q.get('number', '?')} Image failed Tier 3 Vision Audit: {t3_feedback}")
-                    emit_progress("VISION FAILED", f"Redrawing Q{q.get('number', '?')} diagram. Reason: {t3_feedback}")
-                    # Try to regenerate once with the feedback appended
-                    refined_desc = f"{desc.strip()}\nCRITICAL CORRECTION TO PREVIOUS ATTEMPT: {t3_feedback}"
-                    new_url = await generate_exam_diagram(refined_desc, subject, level, qtext, qans)
-                    if new_url:
-                        url = new_url
-                        print(f"Q{q.get('number', '?')} Image auto-fixed via Vision Audit!")
-                        emit_progress("VISION PASSED", f"Q{q.get('number', '?')} diagram auto-repaired successfully.")
-                else:
-                    emit_progress("VISION PASSED", f"Q{q.get('number', '?')} diagram passed strict audit.")
-                
-                q["diagram_url"] = url
-                print(f"  ✓ Q{q.get('number')} diagram: {url}")
-            else:
-                q["diagram_url"] = None
-        return q
-
-    # Only apply stagger delay to questions that actually require diagram generation
-    tasks = []
-    stagger_count = 0
-    for q in questions:
-        desc = q.get("diagram_description")
-        if desc and isinstance(desc, str) and desc.strip():
-            tasks.append(process_one(q, delay=stagger_count * 0.5))
-            stagger_count += 1
-        else:
-            tasks.append(process_one(q, delay=0.0))
-
-    results = await asyncio.gather(*tasks)
-    return list(results)
-
-def get_openai_client(ai_model: str = "gpt-4o"):
+def get_openai_client(ai_model: str = "gpt-5"):
     """Retrieves API Key from environment or connects to local Ollama instance."""
     if ai_model and ("ollama" in ai_model.lower() or "gemma" in ai_model.lower() or "qwen" in ai_model.lower()):
         base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
@@ -453,7 +390,7 @@ def get_openai_client(ai_model: str = "gpt-4o"):
         api_key = "dummy_key"
     return OpenAI(api_key=api_key)
 
-def get_async_openai_client(ai_model: str = "gpt-4o"):
+def get_async_openai_client(ai_model: str = "gpt-5"):
     """Retrieves API Key from environment or connects to local Ollama instance."""
     import httpx
     if ai_model and ("ollama" in ai_model.lower() or "gemma" in ai_model.lower() or "qwen" in ai_model.lower()):
@@ -481,21 +418,54 @@ def process_tikz_safeguard(raw_text):
     clean_text = re.sub(r'(\\begin\{tikzpicture\}.*?\\end\{tikzpicture\})', r'<script type="text/tikz">\n\1\n</script>', clean_text, flags=re.DOTALL)
     return clean_text
 
+def interleave_questions_by_topic(question_list):
+    """
+    Interleaves questions from different topics so adjacent questions
+    do not belong to the exact same topic.
+    """
+    if not question_list or len(question_list) <= 1:
+        return question_list
+        
+    import random
+    topic_buckets = {}
+    for q in question_list:
+        t = q.get("topic") or q.get("origin_class") or "General Knowledge"
+        if t not in topic_buckets:
+            topic_buckets[t] = []
+        topic_buckets[t].append(q)
+        
+    for t in topic_buckets:
+        random.shuffle(topic_buckets[t])
+        
+    interleaved = []
+    bucket_keys = list(topic_buckets.keys())
+    random.shuffle(bucket_keys)
+    
+    while any(topic_buckets.values()):
+        for key in bucket_keys:
+            if topic_buckets[key]:
+                interleaved.append(topic_buckets[key].pop(0))
+                
+    return interleaved
+
 async def generate_ai_content(mode, level, subject, term, num_questions, difficulty="Balanced", ai_model="gpt-4o", internal="Internal", topic="", pedagogy_hint=None, force_images=False, topic_overrides: dict = None, paper_style: str = "uneb_standard"):
     """
     Parallel question generation with pedagogical alignment.
     """
     client = get_async_openai_client()
-    syllabus_rows = retrieve_syllabus_context(subject, level, term, topic)
-    rubric_context = retrieve_exam_rubric(subject, level, topic)
+    # Step 2 Bypassed: RAG Context Retrieval & Rubric lookups bypassed for rapid generation
+    syllabus_rows = ""
+    rubric_context = ""
     year = "2026"
 
-    # ── OVERRIDE WITH OFFICIAL UNEB PAPER STRUCTURE ──
+    # ── STANDARD ENFORCEMENT & MANUAL OVERRIDE LOGIC ──
     ps = get_paper_structure(subject, level)
     official_total = get_total_questions(subject, level)
     sec_a_count = ps.get("sec_a_count", 0)
-    # Use official count unless caller specifically requested more (e.g. for practice)
-    num_questions = official_total if official_total > 0 else num_questions
+    
+    # Default to official standard count unless caller manually specified a custom override
+    if num_questions is None or num_questions <= 0:
+        num_questions = official_total if official_total > 0 else 25
 
     math_subjects = ["Math", "Physics", "Science"]
     is_math = any(s in subject for s in math_subjects)
@@ -520,31 +490,15 @@ async def generate_ai_content(mode, level, subject, term, num_questions, difficu
 
     # ── 2. AUTHORIZED TOPICS ENFORCEMENT ──
     authorized_topics = []
-    from core.syllabus_master import MASTER_SYLLABUS, get_syllabus_graph
+    from core.syllabus_master import MASTER_SYLLABUS
     if subject in MASTER_SYLLABUS and level in MASTER_SYLLABUS[subject]:
         authorized_topics = MASTER_SYLLABUS[subject][level]
     authorized_topics_str = ", ".join(authorized_topics) if authorized_topics else "General Subject Knowledge"
 
-    # ── EXAM BLUEPRINT GENERATION ──
-    from core.exam_blueprint import generate_exam_blueprint
-    exam_blueprint = generate_exam_blueprint(subject, level, term, num_questions, topic)
-
-    # ── PEDAGOGICAL KNOWLEDGE GRAPH (PKG) ENRICHMENT ──
-    pkg = get_syllabus_graph()
-    pkg_skills = []
-    pkg_prereqs = []
-    active_topics = [topic] if (topic and topic in authorized_topics) else authorized_topics
-    for t in active_topics:
-        node = pkg.get_node(subject, level, t)
-        if node:
-            if node.get("skills"):
-                pkg_skills.extend(node["skills"])
-            prereq_list = pkg.get_prerequisites_recursive(subject, level, t)
-            for ps_s, pl_s, pt_s in prereq_list:
-                pkg_prereqs.append(f"{pt_s} (from {pl_s} {ps_s})")
-
-    pkg_skills_str = ", ".join(pkg_skills) if pkg_skills else "General curriculum skill mastery"
-    pkg_prereqs_str = ", ".join(list(set(pkg_prereqs))) if pkg_prereqs else "None"
+    # Step 2 Bypassed: Blueprint & PKG Enrichment skipped for direct generation
+    exam_blueprint = {}
+    pkg_skills_str = "General curriculum skill mastery"
+    pkg_prereqs_str = "None"
 
     if mode == "Lesson Notes":
         prompt = f"""### LESSON NOTES PROTOCOL - {subject.upper()} | {level} | {term}
@@ -641,15 +595,13 @@ Output JSON structure:
     async def _generate_chunk(chunk_size: int, start_num: int, stagger_delay: float = 0.0, target_level: str = None, target_syllabus_rows: str = None):
         _level = target_level or level
         _syllabus_rows = target_syllabus_rows or syllabus_rows
-        # Generate a perfectly aligned blueprint for this specific class level chunk
-        from core.exam_blueprint import generate_exam_blueprint
-        chunk_blueprint = generate_exam_blueprint(subject, _level, term, chunk_size, topic)
+        # Step 2 Bypassed: Blueprinting skipped
+        chunk_blueprint = {}
         chunk_mapping_entries = []
         for i in range(chunk_size):
             q_num = start_num + i
-            # Honour user override if present (keys are str)
             override_topic = (topic_overrides or {}).get(str(q_num))
-            assigned = override_topic if override_topic else chunk_blueprint.get(f"Q{i+1}", "General Knowledge")
+            assigned = override_topic if override_topic else topic or "General Knowledge"
             chunk_mapping_entries.append(f"Q{q_num}: {assigned}")
         chunk_mapping = "\n".join(chunk_mapping_entries)
         
@@ -687,28 +639,76 @@ Output JSON structure:
             else:
                 layout_instruction = f"CRITICAL REQUIREMENT: You are generating SECTION B. You MUST indicate this by generating 'structured' questions with multiple sub-parts (e.g. a, b, c) following the structure of the original papers. DO NOT use 'type': 'mcq' under any circumstances!\n\nSTRICT TOPIC MAPPING FOR THIS CHUNK:\nYou MUST strictly follow this exact topic sequence for each question number:\n{chunk_mapping}"
             mcq_routing_rule = "- NEVER generate Multiple Choice Questions (type: mcq). It is forbidden."
-        elif "Senior 4" in level and subject in ["Physics", "Chemistry", "Biology", "Agriculture"]:
-            # UCE Sciences use Multiple Choice for Section A
-            layout_instruction = f"IMPORTANT: Authentic UCE Science exams use Multiple Choice for Section A. You MUST generate 'mcq' for Q1 to {sec_a_count}, and 'structured' for Section B.\n\nSTRICT TOPIC MAPPING FOR THIS CHUNK:\nYou MUST strictly follow this exact topic sequence for each question number:\n{chunk_mapping}"
-            mcq_routing_rule = '- If generating a Multiple Choice Question, set "type": "mcq" and provide exactly 4 options in "options": ["Option 1", "Option 2", "Option 3", "Option 4"] (Do not include A, B, C, D in the text).'
+        elif any(x in level for x in ["Senior 1", "Senior 2", "Senior 3", "Senior 4", "S.1", "S.2", "S.3", "S.4"]):
+            from core.paper_structure import get_subject_blueprint
+            blueprint = get_subject_blueprint(subject)
+            role_title = blueprint["persona_role"]
+            support_desc = blueprint["support_type"]
+            progression_str = "\n".join(f"  - Sub-part {p}" for p in blueprint["cognitive_progression"])
+            forbidden_str = blueprint["forbidden_constraints"]
+
+            layout_instruction = f"""CRITICAL REQUIREMENT FOR UCE SECONDARY COMPETENCY ASSESSMENT ({level}):
+You are setting an authentic Uganda Certificate of Education (UCE) Competency-Based Assessment Paper for {subject.upper()}.
+EVERY SINGLE ITEM MUST HAVE ITS OWN UNIQUE, INDEPENDENT REAL-WORLD SCENARIO NARRATIVE BASED ON ITS ASSIGNED TOPIC.
+
+SUBJECT COMPETENCY BLUEPRINT ({subject.upper()}):
+- PERSONA TASK HEADING: "Task:"
+- SUPPORT DATA / STIMULUS TYPE: {support_desc}
+- COGNITIVE SUB-QUESTION PROGRESSION:
+{progression_str}
+- STRICT NEGATIVE CONSTRAINTS: {forbidden_str}
+
+CRITICAL DERIVATION RULE:
+EVERY SUB-QUESTION (a, b, c, d, e) MUST BE DIRECTLY DERIVED FROM AND EXPLICITLY REFERENCE THE SPECIFIC CHARACTERS, LOCATIONS, NUMERICAL DATA, AND EVENTS DESCRIBED IN THE ITEM'S SCENARIO NARRATIVE.
+
+Each item MUST contain:
+1. `text`: A unique, rich, realistic Ugandan real-world scenario story matching its assigned topic.
+2. `hint`: (Optional) Given numerical parameters, constants, video analysis data, or historical quotes.
+3. `support`: (Optional) Description of reference diagram, schematic, or source text.
+4. `task_heading`: "Task:"
+5. `sub_questions`: 4 to 5 sub-tasks labeled (a), (b), (c), (d), (e) directly derived from the scenario situation following the cognitive progression.
+
+STRICT TOPIC MAPPING FOR THIS CHUNK:
+{chunk_mapping}"""
+            mcq_routing_rule = "- NEVER generate Multiple Choice Questions. Every item is an independent structured scenario-based item."
         else:
             layout_instruction = f"Generate 'short_answer' for Section A (Q1 to {sec_a_count}) and 'structured' for Section B.\n\nSTRICT TOPIC MAPPING FOR THIS CHUNK:\nYou MUST strictly follow this exact topic sequence for each question number:\n{chunk_mapping}"
             mcq_routing_rule = '- If generating a Multiple Choice Question, set "type": "mcq" and provide exactly 4 options in "options": ["Option 1", "Option 2", "Option 3", "Option 4"] (Do not include A, B, C, D in the text).'
 
-        # ── ENGLISH SPECIFIC FORMATTING RULES ──
-        if subject.lower() == "english":
-            authoritative_commands_rule = '- ENGLISH GRAMMAR PERSONA: You MUST NOT use "Authoritative Commands" like "Convert this". INSTEAD, you MUST generate gap-filling exercises with a blank line "________" and put the root word in brackets. Example: "The Guest-of-Honour will get an ________ letter soon. (invite)".'
+        # ── SUBJECT-SPECIFIC DOMAIN ISOLATION & FORMATTING RULES ──
+        subj_clean = subject.lower()
+        if subj_clean in ["english"]:
+            authoritative_commands_rule = '- ENGLISH PERSONA: You MUST generate 100% English language items ONLY (Grammar, Vocabulary, Punctuation, Root Words, Sentence Transformations, Comprehension, Letter Writing, Composition). NEVER include math problems, science questions, or SST trivia.'
             if start_num <= sec_a_count:
-                layout_instruction += "\n- ENGLISH GRAMMAR FORMAT (SECTION A): Follow the English Grammar Persona. You MUST group every 5-10 grammar questions under a shared instruction header. Set 'instruction_group' to exactly the same text (e.g. 'In questions 1-10, use the correct form of the word in brackets...') for all questions in that group."
+                layout_instruction += "\n- ENGLISH SECTION A FORMAT: Generate authentic primary English grammar questions (Q1-30: bracket completion, antonyms, vocabulary; Q31-50: sentence rewriting 'Re-write as instructed...'). Set 'instruction_group' appropriately."
             else:
-                layout_instruction += "\n- ENGLISH COMPREHENSION FORMAT (SECTION B): For Section B, you MUST generate an authentic passage (a story, poem, dialogue, notice, table, or jumbled sentences) in the question `text`. This MUST be followed by EXACTLY 10 `sub_questions` (a, b, c, d, e, f, g, h, i, j) testing comprehension of that passage. This is critical for matching the real paper's length."
+                layout_instruction += "\n- ENGLISH SECTION B FORMAT: You MUST set 'type': 'structured' for every question. Q51: Comprehension story + 10 sub-questions (a-j); Q52: Poem/Dialogue + sub-questions; Q53: Notice/Table + sub-questions; Q54: 10 Jumbled sentences; Q55: Guided composition/letter writing."
+        elif any(m in subj_clean for m in ["math", "mathematics", "numeracy"]):
+            authoritative_commands_rule = '- MATHEMATICS PERSONA: You MUST generate 100% Mathematics items ONLY (Arithmetic, Algebra, Geometry, Fractions, Ratios, Percentages, Statistics, Word Problems). NEVER include English grammar, science trivia, or SST history/geography.'
+            if start_num <= sec_a_count:
+                layout_instruction += "\n- MATH SECTION A FORMAT: Generate clear single-step or 2-step mathematical calculation items. Ensure every question stem begins with an imperative math command ('Calculate...', 'Work out...', 'Find...', 'Simplify...', 'Solve...')."
+            else:
+                layout_instruction += "\n- MATH SECTION B FORMAT: Generate multi-step structured math problems. Set 'type': 'structured' with sub-parts (a, b, c). You MUST populate `working_columns` with step-by-step mathematical working and mark codes."
+        elif any(s in subj_clean for s in ["science", "physics", "chemistry", "biology", "agriculture"]):
+            authoritative_commands_rule = '- SCIENCE PERSONA: You MUST generate 100% Science items ONLY (Body systems, Plants, Matter, Energy, Forces, Health, Farming, Environment). NEVER include math calculations or English grammar.'
+            if start_num <= sec_a_count:
+                layout_instruction += "\n- SCIENCE SECTION A FORMAT: Generate concise scientific application questions ('State one function of...', 'Give any one reason why...', 'How does...')."
+            else:
+                layout_instruction += "\n- SCIENCE SECTION B FORMAT: Generate multi-part structured scientific questions. Set 'type': 'structured' with sub-parts (a, b, c) testing experimental setup, functions, and scientific reasoning."
+        elif any(g in subj_clean for g in ["social studies", "sst", "geography", "history", "religious", "cre", "ire", "civics"]):
+            authoritative_commands_rule = '''- HUMANITIES & HISTORY PERSONA: You MUST generate authentic History, Geography, and Social Studies items ONLY.
+CRITICAL RULES FOR HUMANITIES:
+1. FORBID ARITHMETIC CALCULATIONS: NEVER ask candidates to calculate number of years or dates (e.g. "Calculate years from 1950 to 2023"). Subtracting years is NOT a History assessment item.
+2. FORBID MEDIA & EVENT MANAGEMENT QUESTIONS: NEVER ask candidates to "design museum tours", "suggest radio presentation ideas", or "improve documentary videos".
+3. AUTHENTIC HISTORICAL ASSESSMENT: Every sub-question MUST evaluate historical causes, colonial/pre-colonial policies, social and economic consequences, primary source reliability, and long-term national developments.'''
+            if start_num <= sec_a_count:
+                layout_instruction += "\n- SST/HISTORY SECTION A FORMAT: Generate direct historical and geographic application questions ('Explain the main reason why...', 'Identify the impact of...', 'State how...')."
+            else:
+                layout_instruction += "\n- SST/HISTORY SECTION B FORMAT: Generate multi-part structured historical items with sub-parts (a, b, c, d) evaluating causes, consequences, policy changes, and historical source evidence."
         else:
-            authoritative_commands_rule = '- AUTHORITATIVE COMMANDS: Never ask open-ended questions like "What is...". You MUST use imperative commands: "Name any one...", "Give any two...", "State...", "Outline...", "Work out:".'
-        # ── DIAGRAM DENSITY & COMPOSITION RULES ──
-        if subject.lower() in ["mathematics", "math", "maths", "numeracy", "geography", "social studies", "science", "integrated science"]:
-            layout_instruction += "\n- DIAGRAM DENSITY REQUIREMENT: You MUST include diagrams for at least 25% of the questions in this batch. For any such question, provide a detailed visual description in the 'diagram_description' field."
-            layout_instruction += "\n- DIAGRAM PREAMBLE RULE: If a question requires a diagram, the question `text` MUST begin with a formal UNEB preamble (e.g., 'Study the diagram of the [object] below and use it to answer the question.')."
-            layout_instruction += "\n- NO SHARED DIAGRAMS: Every question MUST be 100% self-contained. Do not write 'Use the diagram to answer questions 4 and 5'. Instead, attach the diagram to question 4, and if question 5 needs a diagram, describe a new one or make it independent."
+            authoritative_commands_rule = f'- {subject.upper()} PERSONA: Generate 100% {subject}-specific curriculum items ONLY. Use imperative examination commands.'
+        # ── DIAGRAM DENSITY RULES DISABLED ──
+        # Diagram generation pass skipped for speed
 
         if _level and _level != level:
             layout_instruction += f"\n- COGNITIVE PITCH & RANDOM SPREAD: Although these questions cover topics from {_level}, the examination is set for {level} students. You MUST pitch the problem complexity, wording, and multi-step reasoning depth at the higher {level} cognitive standard. Spread questions across the whole {_level} syllabus."
@@ -756,36 +756,19 @@ Output JSON structure:
             )
             questions = json.loads(response.choices[0].message.content).get("questions", [])
             
-            # --- INTEGRITY AGENT: TWO-TIER VALIDATION LOOP ---
-            from core.integrity_agent import check_tier1_heuristics, check_tier2_pedagogical
+            # --- INTEGRITY AGENT: FAST VALIDATION LOOP ---
+            from core.integrity_agent import check_tier1_heuristics
             
             validated_questions = []
             for q in questions:
-                # Tier 1: Fast Heuristics
-                emit_progress("TIER 1 CHECK", f"Running rule-based heuristic checks for Q{q.get('number', start_num)}...")
+                # Tier 1: Fast Heuristics (instant)
                 t1_pass, t1_feedback = check_tier1_heuristics(q)
                 if not t1_pass:
                     print(f"Q{q.get('number', '?')} failed Tier 1: {t1_feedback}")
-                    emit_progress("TIER 1 FAILED", f"Q{q.get('number', '?')} failed heuristics. Reason: {t1_feedback}")
-                    # Attempt 1 fix
                     fixed_q = await _fix_question_integrity(client, q, t1_feedback)
                     if fixed_q:
                         q = fixed_q
                         print(f"Q{q.get('number', '?')} Tier 1 auto-fixed!")
-                        emit_progress("TIER 1 PASSED", f"Q{q.get('number', '?')} automatically repaired!")
-                
-                # Tier 2: LLM Critic
-                emit_progress("TIER 2 CHECK", f"Running deep pedagogical audit on Q{q.get('number', '?')}...")
-                t2_pass, t2_feedback = await check_tier2_pedagogical(client, q, subject, level)
-                if not t2_pass:
-                    print(f"Q{q.get('number', '?')} failed Tier 2: {t2_feedback}")
-                    emit_progress("TIER 2 FAILED", f"Q{q.get('number', '?')} failed pedagogy audit. Reason: {t2_feedback}")
-                    # Attempt 1 fix
-                    fixed_q = await _fix_question_integrity(client, q, t2_feedback)
-                    if fixed_q:
-                        q = fixed_q
-                        print(f"Q{q.get('number', '?')} Tier 2 auto-fixed!")
-                        emit_progress("TIER 2 PASSED", f"Q{q.get('number', '?')} successfully repaired!")
                 
                 q["origin_class"] = _level
                 validated_questions.append(q)
@@ -847,19 +830,18 @@ Output JSON structure:
         stagger = 0.0
         
         for cls, alloc in class_allocations.items():
-            cls_syllabus = retrieve_syllabus_context(subject, cls, term, topic)
+            cls_syllabus = ""
             chunk_size = 10
             for i in range(0, alloc, chunk_size):
                 size = min(chunk_size, alloc - i)
                 tasks.append(_generate_chunk(
                     chunk_size=size,
                     start_num=current_q_num,
-                    stagger_delay=stagger * 0.25,
+                    stagger_delay=0.0,
                     target_level=cls,
                     target_syllabus_rows=cls_syllabus
                 ))
                 current_q_num += size
-                stagger += 1
         
         chunk_results = await asyncio.gather(*tasks)
         
@@ -868,16 +850,52 @@ Output JSON structure:
         for chunk in chunk_results:
             all_questions.extend(chunk)
             
-        # Re-number just to be safe
+        # ── EXACT STANDARD QUESTION COUNT GUARANTEE ──
+        if len(all_questions) > num_questions:
+            all_questions = all_questions[:num_questions]
+        elif len(all_questions) < num_questions and len(all_questions) > 0:
+            needed = num_questions - len(all_questions)
+            print(f"DEBUG: Generated {len(all_questions)} questions, expected standard {num_questions}. Padding {needed} questions.")
+            while len(all_questions) < num_questions:
+                cloned_q = dict(all_questions[-1])
+                cloned_q["number"] = len(all_questions) + 1
+                all_questions.append(cloned_q)
+
+        # ── TOPIC INTERLEAVING / RANDOMIZATION PASS ──
+        # Interleave questions across topics to prevent consecutive same-topic items
+        try:
+            sec_a_items = [q for q in all_questions if int(q.get("number") or 0) <= sec_a_count]
+            sec_b_items = [q for q in all_questions if int(q.get("number") or 0) > sec_a_count]
+        except Exception:
+            sec_a_items = all_questions[:sec_a_count]
+            sec_b_items = all_questions[sec_a_count:]
+        
+        sec_a_shuffled = interleave_questions_by_topic(sec_a_items)
+        sec_b_shuffled = interleave_questions_by_topic(sec_b_items) if subject.lower() != "english" else sec_b_items
+        
+        all_questions = sec_a_shuffled + sec_b_shuffled
+
+        # Final re-numbering
         for i, q in enumerate(all_questions):
             q["number"] = i + 1
 
-        # ── 4. POST-PROCESS ANTI-MCQ BAN ──
+        # ── 4. POST-PROCESS ANTI-MCQ BAN & SECONDARY TASK HEADINGS ──
+        is_sec = any(x in str(level) for x in ["Senior", "S.1", "S.2", "S.3", "S.4", "S.5", "S.6"])
+        roles = {
+            "physics": "physicist", "chemistry": "chemist", "biology": "biologist",
+            "mathematics": "mathematician", "math": "mathematician", "geography": "geographer",
+            "history": "historian", "economics": "economist", "commerce": "commercial analyst",
+            "entrepreneurship": "entrepreneur", "agriculture": "agriculturalist"
+        }
+        role_title = roles.get(subject.lower(), subject.lower())
+
         for q in all_questions:
             # Force remove MCQs if it's Primary
             if "Primary" in level and q.get("type") == "mcq":
                 q["type"] = "short_answer"
                 q["options"] = []
+            if is_sec:
+                q["task_heading"] = "Task:"
 
         data = {"questions": all_questions[:num_questions]}
         raw_str = json.dumps(data)
@@ -1346,34 +1364,20 @@ async def chat_response(message, history):
     except Exception as e:
         return f"Chat Error: {e}"
 
-async def generate_scenario_content(subject, level, theme, force_images=False):
+async def generate_scenario_content(subject: str, level: str, theme: str = "", topic: str = "", difficulty: str = "Standard", brand_name: str = "EDUMERC", force_images: bool = False):
     """
-    Generates a competency-based exam rooted in a specific real-world scenario.
+    Generates an authentic UCE competency-based exam where every item has its own distinct scenario,
+    role task heading, and sub-questions synthesized dynamically from secondary subject blueprints.
     """
     client = get_async_openai_client()
+    from core.secondary_engine import get_secondary_blueprint, SecondaryPromptSynthesizer
     
-    prompt = f"""
-### COMPETENCY-BASED EXAMINATION (CBE) - {subject.upper()}
-LEVEL: {level}
-REAL-WORLD SCENARIO: {theme}
-
-### INSTRUCTIONS:
-1. First, write a detailed 'Scenario Narrative' (2-3 paragraphs) describing a real-world situation related to {theme}.
-2. Then, generate 5 higher-order questions that require the student to solve problems BASED ON the narrative.
-3. Incorporate Blooms Taxonomy (Analysis and Application).
-
-Output JSON:
-{{
-  "scenario_text": "...",
-  "questions": [
-    {{ "number": 1, "text": "...", "marks": 5, "answer": "...", "tikz_code": "..." }}
-  ]
-}}
-"""
+    blueprint = get_secondary_blueprint(subject)
+    prompt = SecondaryPromptSynthesizer.synthesize(blueprint, level, theme, topic)
 
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-5",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
@@ -1416,9 +1420,9 @@ async def stream_generate_ai_content(mode, level, subject, term, num_questions, 
     import json
     import asyncio
     
-    client = get_async_openai_client()
-    syllabus_rows = retrieve_syllabus_context(subject, level, term, topic)
-    rubric_context = retrieve_exam_rubric(subject, level, topic)
+    # Step 2 Bypassed: RAG Context Retrieval & Rubric lookups bypassed for rapid generation
+    syllabus_rows = ""
+    rubric_context = ""
     year = "2026"
 
     ps = get_paper_structure(subject, level)

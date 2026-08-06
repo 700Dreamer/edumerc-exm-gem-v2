@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from core.ai_engine import generate_ai_content, analyze_pedagogy, chat_response, get_openai_client, generate_scenario_content, generate_illustration, stream_generate_ai_content, analyze_image_needs, generate_nursery_exam, generate_diagrams_for_questions
+from core.secondary_agentic_pipeline import stream_secondary_paper_agentic, regenerate_single_secondary_item
 from core.db_engine import save_project, load_projects, init_db
 from core.pdf_engine import save_pdf_background
 from ui.document_builder import build_full_html
@@ -102,7 +103,7 @@ class GenerateRequest(BaseModel):
     view_mode: Optional[str] = "scroll"
     topic: Optional[str] = ""
     brand_name: Optional[str] = "EduQuest"
-    ai_model: Optional[str] = "gpt-4o"
+    ai_model: Optional[str] = "gpt-5"
     content_override: Optional[str] = None
     pedagogy_hint: Optional[dict] = None
     force_images: Optional[bool] = False
@@ -116,8 +117,48 @@ class ScenarioRequest(BaseModel):
     topic: Optional[str] = ""
     difficulty: Optional[str] = "Standard"
     brand_name: Optional[str] = "EduQuest"
-    ai_model: Optional[str] = "gpt-4o"
+    ai_model: Optional[str] = "gpt-5"
     force_images: Optional[bool] = False
+
+class SecondaryRegenerateItemRequest(BaseModel):
+    subject: str
+    level: str
+    item_number: int
+    theme: Optional[str] = ""
+    topic: Optional[str] = ""
+
+@app.post("/api/scenario-stream")
+async def scenario_stream_endpoint(req: ScenarioRequest):
+    return StreamingResponse(
+        stream_secondary_paper_agentic(
+            subject=req.subject,
+            level=req.level,
+            theme=req.theme,
+            topic=req.topic,
+            brand_name=req.brand_name or "EDUMERC",
+            question_count=3
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+@app.post("/api/secondary-item-regenerate")
+async def regenerate_secondary_item_endpoint(req: SecondaryRegenerateItemRequest):
+    try:
+        result = await regenerate_single_secondary_item(
+            subject=req.subject,
+            level=req.level,
+            item_number=req.item_number,
+            theme=req.theme or "",
+            topic=req.topic or ""
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/scenario")
 async def scenario_endpoint(
@@ -126,7 +167,15 @@ async def scenario_endpoint(
     current_user: User = Depends(require_role(["staff", "admin"]))
 ):
     try:
-        raw_str = await generate_scenario_content(req.subject, req.level, req.theme, force_images=req.force_images)
+        raw_str = await generate_scenario_content(
+            subject=req.subject,
+            level=req.level,
+            theme=req.theme,
+            topic=req.topic,
+            difficulty=req.difficulty,
+            brand_name=req.brand_name,
+            force_images=req.force_images
+        )
         raw_data = json.loads(raw_str)
         title = f"{req.subject} {req.level} - Competency Test"
         
@@ -143,7 +192,7 @@ async def scenario_endpoint(
             brand_name=req.brand_name,
             question_count=len(raw_data.get("questions", [])),
             content_raw=raw_str,
-            topic=req.theme
+            topic=""
         )
         
         # Auto-save
@@ -199,8 +248,8 @@ async def generate_endpoint(
         elif "(EOT)" in term_val or "EOT" in term_val: exam_type = "END OF"
         
         # ── DIAGRAM GENERATION PASS ──────────────────────────────────────
-        # For any question with a diagram_description, call gpt-image-1
-        if req.mode == "Exams" and isinstance(raw, dict) and raw.get("questions"):
+        # Heavy gpt-image-1 image generation only runs when force_images is enabled
+        if req.mode == "Exams" and req.force_images and isinstance(raw, dict) and raw.get("questions"):
             questions_with_diagrams = await generate_diagrams_for_questions(
                 raw["questions"], req.subject, req.level
             )
@@ -240,10 +289,17 @@ async def generate_endpoint(
             {"subject": req.subject, "level": req.level, "term": req.term, "question_count": req.question_count, "title": title}
         )
         
-        return {"raw": raw_str, "html": html, "title": title}
+        return {"raw": raw, "html": html, "title": title}
+        
+    except ValueError as ve:
+        if "OPENAI_API_KEY" in str(ve):
+            raise HTTPException(status_code=400, detail="OPENAI_API_KEY is missing. Please add your key to the .env file in the root directory.")
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         import traceback
         traceback.print_exc()
+        if "OPENAI_API_KEY" in str(e):
+            raise HTTPException(status_code=400, detail="OPENAI_API_KEY is missing. Please add your key to the .env file in the root directory.")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate-stream")
@@ -302,17 +358,23 @@ async def progress_stream_endpoint():
     async def event_generator():
         try:
             while True:
-                msg = await q.get()
-                yield f"data: {msg}\n\n"
+                try:
+                    msg = await asyncio.wait_for(q.get(), timeout=15.0)
+                    yield f"data: {msg}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"
         except asyncio.CancelledError:
+            pass
+        finally:
             remove_listener(q)
             
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
         }
     )
 

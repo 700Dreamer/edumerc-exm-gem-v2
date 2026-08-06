@@ -125,41 +125,41 @@ PAPER_STRUCTURES = {
         "description": "English Language Promotional Examination",
     },
 
-    # ─── UGANDA CERTIFICATE OF EDUCATION (UCE / O-Level) ─────────────────
+    # ─── UGANDA CERTIFICATE OF EDUCATION (UCE / O-Level New Curriculum) ────
     ("Mathematics", "Senior 4"): {
-        "sec_a_count": 20, "sec_a_marks": 20,
-        "sec_b_count": 10, "sec_b_marks": 80,
-        "total_marks": 100, "duration": "3 HRS",
-        "description": "Mathematics UCE Paper 1 + 2",
-        "sec_b_note": "Answer any 8 out of 10 questions in Section B"
+        "sec_a_count": 0, "sec_a_marks": 0,
+        "sec_b_count": 3, "sec_b_marks": 50,
+        "total_marks": 50, "duration": "1 ½ HR",
+        "description": "Mathematics UCE Competency Assessment",
+        "sec_b_note": "Respond to only two items."
     },
     ("Physics", "Senior 4"): {
-        "sec_a_count": 20, "sec_a_marks": 20,
-        "sec_b_count": 8,  "sec_b_marks": 80,
-        "total_marks": 100, "duration": "2 HRS 30 MIN",
-        "description": "Physics UCE Paper",
-        "sec_b_note": "Answer any 6 questions in Section B"
+        "sec_a_count": 0, "sec_a_marks": 0,
+        "sec_b_count": 3, "sec_b_marks": 50,
+        "total_marks": 50, "duration": "1 ½ HR",
+        "description": "Physics UCE Competency Assessment",
+        "sec_b_note": "Respond to only two items."
     },
     ("Chemistry", "Senior 4"): {
-        "sec_a_count": 20, "sec_a_marks": 20,
-        "sec_b_count": 8,  "sec_b_marks": 80,
-        "total_marks": 100, "duration": "2 HRS 30 MIN",
-        "description": "Chemistry UCE Paper",
-        "sec_b_note": "Answer any 6 questions in Section B"
+        "sec_a_count": 0, "sec_a_marks": 0,
+        "sec_b_count": 3, "sec_b_marks": 50,
+        "total_marks": 50, "duration": "1 ½ HR",
+        "description": "Chemistry UCE Competency Assessment",
+        "sec_b_note": "Respond to only two items."
     },
     ("Biology", "Senior 4"): {
-        "sec_a_count": 20, "sec_a_marks": 20,
-        "sec_b_count": 8,  "sec_b_marks": 80,
-        "total_marks": 100, "duration": "2 HRS 30 MIN",
-        "description": "Biology UCE Paper",
-        "sec_b_note": "Answer any 6 questions in Section B"
+        "sec_a_count": 0, "sec_a_marks": 0,
+        "sec_b_count": 3, "sec_b_marks": 50,
+        "total_marks": 50, "duration": "1 ½ HR",
+        "description": "Biology UCE Competency Assessment",
+        "sec_b_note": "Respond to only two items."
     },
     ("English", "Senior 4"): {
-        "sec_a_count": 30, "sec_a_marks": 30,
-        "sec_b_count": 5,  "sec_b_marks": 70,
-        "total_marks": 100, "duration": "2 HRS 30 MIN",
-        "description": "English Language UCE Paper",
-        "sec_b_note": "Section B: Comprehension, Summary, Composition"
+        "sec_a_count": 0, "sec_a_marks": 0,
+        "sec_b_count": 3, "sec_b_marks": 50,
+        "total_marks": 50, "duration": "1 ½ HR",
+        "description": "English Language UCE Competency Assessment",
+        "sec_b_note": "Attempt all items."
     },
 
     # ─── UACE (A-Level) ───────────────────────────────────────────────────
@@ -441,6 +441,16 @@ def get_paper_structure(subject: str, level: str) -> dict:
             "description": f"{subject} Lower Primary Assessment"
         }
         
+    # Provide sane structure for Lower Secondary (Senior 1-4 Competency Assessments)
+    if any(s in str(level) for s in ["Senior 1", "Senior 2", "Senior 3", "Senior 4", "S.1", "S.2", "S.3", "S.4"]):
+        return {
+            "sec_a_count": 0, "sec_a_marks": 0,
+            "sec_b_count": 3, "sec_b_marks": 50,
+            "total_marks": 50, "duration": "1 ½ HR",
+            "description": f"{subject} UCE Competency Assessment",
+            "sec_b_note": "Respond to only two items."
+        }
+
     return DEFAULT_STRUCTURE
 
 
@@ -448,3 +458,121 @@ def get_total_questions(subject: str, level: str) -> int:
     """Returns the official total question count (A + B) for the paper."""
     s = get_paper_structure(subject, level)
     return s["sec_a_count"] + s["sec_b_count"]
+
+
+# ─── SUBJECT COMPETENCY BLUEPRINTS (NCDC / UNEB GUIDES) ──────────────────────
+SUBJECT_COMPETENCY_BLUEPRINTS = {
+    "Physics": {
+        "persona_role": "Task:",
+        "support_type": "Given numerical parameters, physical constants (e.g. initial velocity, mass, braking deceleration, apparent depth), motion graphs, apparatus diagrams.",
+        "cognitive_progression": [
+            "(a) Quantitative calculation or direct physical law determination (3 marks)",
+            "(b) Physical mechanism explanation or principle evaluation (4 marks)",
+            "(c) Energy loss, efficiency calculation, or safety gear assessment (3 marks)",
+            "(d) Real-world practical application, impulse/force safety analysis, or optical implication (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID non-scientific fluff. FORBID subjective opinion questions without physical laws."
+    },
+    "Chemistry": {
+        "persona_role": "Task:",
+        "support_type": "Chemical reaction equations, molar masses, solution concentrations, pH values, laboratory setup diagrams.",
+        "cognitive_progression": [
+            "(a) Chemical equation balancing or product identification (3 marks)",
+            "(b) Reaction rate or stoichiometry calculation / experiment evaluation (4 marks)",
+            "(c) Industrial yield optimization or environmental pollution assessment (3 marks)",
+            "(d) Practical industrial, household, or environmental chemical impact (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID non-chemical trivia. FORBID math calculations unrelated to chemistry."
+    },
+    "Biology": {
+        "persona_role": "Task:",
+        "support_type": "Anatomical/physiological diagrams, ecological food webs, genetic cross tables, plant/animal adaptation data.",
+        "cognitive_progression": [
+            "(a) Biological process identification or organ/structure function (3 marks)",
+            "(b) Physiological mechanism explanation or adaptation evaluation (4 marks)",
+            "(c) Ecological impact, disease control, or genetic trait assessment (3 marks)",
+            "(d) Health, environmental conservation, or agricultural productivity implication (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID math date subtraction. FORBID generic non-biological stories."
+    },
+    "Mathematics": {
+        "persona_role": "Task:",
+        "support_type": "Geometric dimensions, coordinate data, network lengths, statistical tables, algebraic constraints.",
+        "cognitive_progression": [
+            "(a) Initial parameter calculation or geometric length/area determination (3 marks)",
+            "(b) Geometric/algebraic layout optimization or statistical measure calculation (4 marks)",
+            "(c) Cost reduction, percentage variation, or rate of output evaluation (3 marks)",
+            "(d) Real-world system efficiency, long-term trend, or practical community synthesis (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID essay writing or subjective history trivia. MANDATORY step-by-step working."
+    },
+    "History": {
+        "persona_role": "Task:",
+        "support_type": "Historical source extracts, primary quotes, administrator diaries, colonial agreement clauses, pre-colonial kingdom records.",
+        "cognitive_progression": [
+            "(a) Specific historical cause, treaty clause, or primary source analysis (3 marks)",
+            "(b) Socio-economic impact, diplomatic strategy, or colonial policy evaluation (4 marks)",
+            "(c) Critical assessment of historical evidence, bias, or kingdom resistance (3 marks)",
+            "(d) Long-term national development, unity, or modern relevance implication (5 marks)"
+        ],
+        "forbidden_constraints": "CRITICAL BAN: FORBID date subtraction arithmetic (e.g. 'Calculate years from 1950 to 2023'). FORBID media/event management tasks (e.g. 'design museum tour' or 'suggest radio presentation')."
+    },
+    "Geography": {
+        "persona_role": "Task:",
+        "support_type": "Topographic map excerpts, climate graphs, rainfall/temperature tables, landform diagrams, trade statistics.",
+        "cognitive_progression": [
+            "(a) Geographic feature identification, climate data reading, or location factor (3 marks)",
+            "(b) Formation mechanism explanation or land-use pattern assessment (4 marks)",
+            "(c) Environmental hazard, erosion control, or resource conflict evaluation (3 marks)",
+            "(d) Sustainable regional development, conservation policy, or economic planning implication (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID math date subtraction. FORBID non-geographical trivia."
+    },
+    "Economics": {
+        "persona_role": "Task:",
+        "support_type": "Supply/demand price tables, inflation rates, market equilibrium charts, tax rates, trade balance figures.",
+        "cognitive_progression": [
+            "(a) Equilibrium price/quantity calculation or elasticity determination (3 marks)",
+            "(b) Market structure or government fiscal policy impact assessment (4 marks)",
+            "(c) Trade deficit, inflation control, or resource allocation evaluation (3 marks)",
+            "(d) National economic development, employment policy, or poverty alleviation synthesis (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID non-economic story filler."
+    },
+    "Entrepreneurship": {
+        "persona_role": "Task:",
+        "support_type": "Business cash flow statements, cost tables, customer survey data, product production metrics.",
+        "cognitive_progression": [
+            "(a) Profit/loss or break-even volume calculation (3 marks)",
+            "(b) Business opportunity & marketing strategy evaluation (4 marks)",
+            "(c) Risk management or financial resource optimization (3 marks)",
+            "(d) Long-term business sustainability & community value creation (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID non-business story filler."
+    },
+    "English": {
+        "persona_role": "Task:",
+        "support_type": "Passage text, poem, dialogue excerpt, official notice, speech transcript.",
+        "cognitive_progression": [
+            "(a) Passage comprehension / contextual vocabulary extraction (3 marks)",
+            "(b) Character motivation or literary device analysis (4 marks)",
+            "(c) Summary & main argument synthesis (3 marks)",
+            "(d) Guided composition / formal letter writing / critical reflection (5 marks)"
+        ],
+        "forbidden_constraints": "FORBID science formulas and math calculations."
+    }
+}
+
+
+def get_subject_blueprint(subject: str) -> dict:
+    """Returns the official UNEB Subject Competency Blueprint for a given subject."""
+    from core.secondary_engine import get_secondary_blueprint
+    bp = get_secondary_blueprint(subject)
+    return {
+        "persona_role": "Task:",
+        "support_type": bp.stimulus_type + " (" + ", ".join(bp.stimulus_examples[:2]) + ")",
+        "cognitive_progression": [
+            f"{p['label']} {p['text']} ({p['marks']} marks)" for p in bp.cognitive_progression
+        ],
+        "forbidden_constraints": " ".join(bp.negative_constraints)
+    }

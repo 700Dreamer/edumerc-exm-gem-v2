@@ -6,9 +6,9 @@ def check_tier1_heuristics(question):
     Fast rule-based checks. Returns (bool: pass, str: feedback_if_failed)
     """
     q_type = question.get("type", "short_answer")
-    text = question.get("text", "")
-    diagram_desc = question.get("diagram_description", "")
-    sub_questions = question.get("sub_questions", [])
+    text = str(question.get("text") or "")
+    diagram_desc = str(question.get("diagram_description") or "")
+    sub_questions = question.get("sub_questions", []) or []
     total_marks = question.get("marks", 0)
     
     # 1. LaTeX closing check
@@ -130,7 +130,7 @@ If it fails, return exactly: {{"status": "FAIL", "feedback": "Detailed reason wh
                             "type": "image_url",
                             "image_url": {
                                 "url": f"data:image/png;base64,{base64_image}",
-                                "detail": "high"
+                                "detail": "low"
                             }
                         }
                     ]

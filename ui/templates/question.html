@@ -1,11 +1,29 @@
-<div class="q-wrap" data-qtext="{{ safe_text }}" data-subject="{{ subject }}" data-level="{{ level }}" style="margin-bottom:22px; clear:both; position:relative; line-height:1.5; white-space:normal;">
-  <div style="font-size:15px; display:flex; align-items:flex-start; margin-bottom:5px;">
-    <span style="font-weight:bold; margin-right:5px; flex-shrink:0;">{{ num }}.</span>
-    <span style="flex:1;">{{ text }}</span>
+<div class="q-wrap" data-qtext="{{ safe_text }}" data-subject="{{ subject }}" data-level="{{ level }}" style="margin-bottom:28px; clear:both; position:relative; line-height:1.6; white-space:normal;">
+  <div style="font-size:15px; margin-bottom:8px;">
+    {% if is_secondary %}
+      <b style="font-size:15px; font-weight:900;">Item {{ num }}.</b>
+    {% else %}
+      <span style="font-weight:bold; margin-right:5px; flex-shrink:0;">{{ num }}.</span>
+    {% endif %}
+    <span style="line-height:1.6;">{{ text }}</span>
     {% if q_type == 'mcq' %}
-    <div style="border: 2px solid #000; width: 32px; height: 32px; margin-left: 12px; flex-shrink: 0;"></div>
+    <div style="border: 2px solid #000; width: 32px; height: 32px; margin-left: 12px; flex-shrink: 0; display:inline-block; vertical-align:middle;"></div>
     {% endif %}
   </div>
+
+  {% if hint %}
+  <div style="margin-top:10px; margin-bottom:10px;">
+    <b style="font-size:14px;">Hint:</b>
+    <div style="margin-left:15px; font-size:13.5px; line-height:1.5;">{{ hint }}</div>
+  </div>
+  {% endif %}
+
+  {% if support %}
+  <div style="margin-top:10px; margin-bottom:10px;">
+    <b style="font-size:14px;">Support:</b>
+    <div style="margin-left:15px; font-size:13.5px; line-height:1.5;">{{ support }}</div>
+  </div>
+  {% endif %}
 
   <!-- ── REFERENCE DIAGRAM / STUDENT DRAWING (IMMEDIATELY BELOW STEM) ── -->
   {% if is_drawing_question %}
@@ -25,7 +43,11 @@
     {% endif %}
   {% endif %}
 
-  <!-- ── CONTENT / TASK PARTS ── -->
+  {% if task_heading or is_secondary %}
+  <div style="margin-top:12px; margin-bottom:8px; font-weight:bold; font-size:14.5px;">
+    Task:
+  </div>
+  {% endif %}
   {% if q_type == 'mcq' and options %}
   <div style="margin-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; margin-bottom: 15px; font-size: 14px;">
     {% set labels = ['A', 'B', 'C', 'D', 'E'] %}
@@ -79,29 +101,33 @@
       <span style="flex:1;">{{ sub.text }}</span>
       <span style="font-weight:bold;">({{ sub.marks }} marks)</span>
     </div>
-    {% if sub.marks > 1 %}
-        <div class="ans-lines">
-        {% if is_math %}
-            <div style="height: {{ sub.marks * 60 }}px; width: 100%;"></div>
-        {% else %}
-            {% set roman = ['i', 'ii', 'iii', 'iv', 'v'] %}
-            {% for m in range(sub.marks) %}
-                <div style="display:flex; align-items:center;">
-                    <span style="margin-right: 8px; font-size:13px;">({{ roman[loop.index0] if loop.index0 < 5 else loop.index0 + 1 }})</span>
-                    <div class="ans-line" style="flex:1;"></div>
-                </div>
-            {% endfor %}
-        {% endif %}
-        </div>
+    {% if not is_secondary %}
+      {% if sub.marks > 1 %}
+          <div class="ans-lines">
+          {% if is_math %}
+              <div style="height: {{ sub.marks * 40 }}px; width: 100%;"></div>
+          {% else %}
+              {% set roman = ['i', 'ii', 'iii', 'iv', 'v'] %}
+              {% for m in range(sub.marks) %}
+                  <div style="display:flex; align-items:center;">
+                      <span style="margin-right: 8px; font-size:13px;">({{ roman[loop.index0] if loop.index0 < 5 else loop.index0 + 1 }})</span>
+                      <div class="ans-line" style="flex:1;"></div>
+                  </div>
+              {% endfor %}
+          {% endif %}
+          </div>
+      {% else %}
+          <div class="ans-lines">
+          {% if is_math %}
+              <div style="height: 60px; width: 100%;"></div>
+          {% else %}
+              <div class="ans-line"></div>
+              <div class="ans-line"></div>
+          {% endif %}
+          </div>
+      {% endif %}
     {% else %}
-        <div class="ans-lines">
-        {% if is_math %}
-            <div style="height: 120px; width: 100%;"></div>
-        {% else %}
-            <div class="ans-line"></div>
-            <div class="ans-line"></div>
-        {% endif %}
-        </div>
+      <div style="height: 12px;"></div>
     {% endif %}
     {% endfor %}
   </div>

@@ -1,5 +1,7 @@
-# Master Syllabus Definition (Registry)
+# 🔒 MASTER SYLLABUS IS LOCKED - DO NOT MODIFY WITHOUT EXPLICIT USER APPROVAL 🔒
 # Comprehensive Registry for Baby Class - Senior 6 | Uganda National Curriculum
+# Note: Any modification to MASTER_SYLLABUS, subject mappings, or grade structures
+# requires explicit prior approval from the user.
 
 MASTER_SYLLABUS = {
 
@@ -230,11 +232,62 @@ MASTER_SYLLABUS = {
     }
 }
 
-ALL_SUBJECTS = sorted(list(MASTER_SYLLABUS.keys()))
+# ── SUBJECT ALIAS & FALLBACK REGISTRATION ──
+MASTER_SYLLABUS["Science"] = MASTER_SYLLABUS["Integrated Science"]
+MASTER_SYLLABUS["Social Studies"] = MASTER_SYLLABUS["Social Studies with Religious Education"]
+MASTER_SYLLABUS["SST"] = MASTER_SYLLABUS["Social Studies with Religious Education"]
+MASTER_SYLLABUS["Math"] = MASTER_SYLLABUS["Mathematics"]
+MASTER_SYLLABUS["Mathematics"]["Senior 6"] = ["Complex Numbers", "Differential Equations", "Numerical Methods", "Mechanics", "Probability & Statistics", "Vectors in 3D"]
+MASTER_SYLLABUS["English"]["Senior 6"] = ["Advanced Grammar", "Critical Discourse", "Essay Writing", "Literature Analysis", "Précis Writing"]
+MASTER_SYLLABUS["CRE"] = MASTER_SYLLABUS["Christian Religious Education"]
+MASTER_SYLLABUS["IRE"] = MASTER_SYLLABUS["Islamic Religious Education"]
+
+REDUNDANT_ALIASES = {"Math", "Science", "SST", "Social Studies", "CRE", "IRE"}
+ALL_SUBJECTS = sorted([s for s in MASTER_SYLLABUS.keys() if s not in REDUNDANT_ALIASES])
 ALL_LEVELS = ["Baby Class", "Middle Class", "Top Class"] + [f"Primary {i}" for i in range(1, 8)] + [f"Senior {i}" for i in range(1, 7)]
 
+ALIAS_MAP = {
+    "math": "Mathematics",
+    "mathematics": "Mathematics",
+    "science": "Integrated Science",
+    "integrated science": "Integrated Science",
+    "sst": "Social Studies with Religious Education",
+    "social studies": "Social Studies with Religious Education",
+    "social studies with religious education": "Social Studies with Religious Education",
+    "cre": "Christian Religious Education",
+    "christian religious education": "Christian Religious Education",
+    "ire": "Islamic Religious Education",
+    "islamic religious education": "Islamic Religious Education",
+}
+
 def get_master_topics(subject: str, level: str):
-    return MASTER_SYLLABUS.get(subject, {}).get(level, [])
+    if not subject or not level: return []
+    subj = subject.strip()
+
+    # 1. Direct exact match
+    if subj in MASTER_SYLLABUS and level in MASTER_SYLLABUS[subj]:
+        return MASTER_SYLLABUS[subj][level]
+
+    # 2. Known alias map match
+    canon = ALIAS_MAP.get(subj.lower())
+    if canon and canon in MASTER_SYLLABUS and level in MASTER_SYLLABUS[canon]:
+        return MASTER_SYLLABUS[canon][level]
+
+    # 3. Lower primary fallbacks when explicitly requested with upper primary names
+    if subj.lower() in ["integrated science", "science"] and level in ["Primary 1", "Primary 2", "Primary 3"]:
+        return MASTER_SYLLABUS.get("Literacy 1 (Science)", {}).get(level, [])
+    if subj.lower() in ["social studies with religious education", "social studies", "sst"] and level in ["Primary 1", "Primary 2", "Primary 3"]:
+        return MASTER_SYLLABUS.get("Literacy 2 (SST)", {}).get(level, [])
+    if subj.lower() in ["christian religious education", "cre", "religious education (r.e)"] and level in ["Primary 1", "Primary 2", "Primary 3"]:
+        return MASTER_SYLLABUS.get("Religious Education (R.E)", {}).get(level, [])
+
+    # 4. Exact case-insensitive key match only (NO loose substring matching)
+    subj_lower = subj.lower()
+    for key, val in MASTER_SYLLABUS.items():
+        if key.lower() == subj_lower:
+            if level in val:
+                return val[level]
+    return []
 
 def normalize_level(level_str: str):
     if not level_str: return "Unknown"
