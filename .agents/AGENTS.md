@@ -6,4 +6,5 @@
 ## 🚫 Strict No-Emoji Constraint Policy
 - **STRICT EMOJI BAN**: Never use emojis in code, UI templates, logs, frontend components, or AI assistant responses under any circumstances.
 - **ICONS ONLY**: Use clean vector SVG icons, Lucide icons, or CSS styled badge indicators instead of emojis.
-
+## 🔒 Locked Secondary Competency Engine Policy
+- **LOCKED SECONDARY CODEBASE**: Never modify `core/secondary_engine.py`, `core/secondary_agentic_pipeline.py`, or Secondary competency assessment logic without explicit prior approval from the user.

@@ -11,17 +11,9 @@
     {% endif %}
   </div>
 
-  {% if hint %}
-  <div style="margin-top:10px; margin-bottom:10px;">
-    <b style="font-size:14px;">Hint:</b>
-    <div style="margin-left:15px; font-size:13.5px; line-height:1.5;">{{ hint }}</div>
-  </div>
-  {% endif %}
-
-  {% if support %}
-  <div style="margin-top:10px; margin-bottom:10px;">
-    <b style="font-size:14px;">Support:</b>
-    <div style="margin-left:15px; font-size:13.5px; line-height:1.5;">{{ support }}</div>
+  {% if is_math and not is_secondary and q_type != 'structured' %}
+  <div style="float: right; width: 140px; border: 1px dashed #000; padding: 6px; text-align: center; font-size: 9px; text-transform: uppercase; color: #555; height: 60px; margin-left: 10px; border-radius: 4px;">
+    Work out here
   </div>
   {% endif %}
 

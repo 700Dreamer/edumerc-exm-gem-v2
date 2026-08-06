@@ -15,6 +15,12 @@ except Exception:
     genai = None
     genai_client = None
 
+from core.db_engine import retrieve_syllabus_context, retrieve_exam_rubric
+from core.map_library import get_best_map
+from core.paper_structure import get_paper_structure, get_total_questions
+from core.syllabus_master import MASTER_SYLLABUS
+from core.syllabus_rules import get_edumerc_policy
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 async def generate_ai_image(prompt, subject="Geography", level=""):
@@ -379,27 +385,23 @@ async def generate_diagrams_for_questions(questions: list, subject: str, level: 
     """Diagram generation pass disabled for high-speed performance."""
     return questions
 
-def get_openai_client(ai_model: str = "gpt-5"):
-    """Retrieves API Key from environment or connects to local Ollama instance."""
+
+def get_openai_client(ai_model: str = "gpt-4o"):
+    import httpx
     if ai_model and ("ollama" in ai_model.lower() or "gemma" in ai_model.lower() or "qwen" in ai_model.lower()):
         base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         return OpenAI(api_key="ollama", base_url=base_url)
 
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        api_key = "dummy_key"
+    api_key = os.environ.get("OPENAI_API_KEY") or "dummy_key"
     return OpenAI(api_key=api_key)
 
-def get_async_openai_client(ai_model: str = "gpt-5"):
-    """Retrieves API Key from environment or connects to local Ollama instance."""
+def get_async_openai_client(ai_model: str = "gpt-4o"):
     import httpx
     if ai_model and ("ollama" in ai_model.lower() or "gemma" in ai_model.lower() or "qwen" in ai_model.lower()):
         base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         return AsyncOpenAI(api_key="ollama", base_url=base_url, timeout=httpx.Timeout(300.0))
 
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        api_key = "dummy_key"
+    api_key = os.environ.get("OPENAI_API_KEY") or "dummy_key"
     return AsyncOpenAI(api_key=api_key, timeout=httpx.Timeout(120.0))
 
 def process_tikz_safeguard(raw_text):
@@ -1350,16 +1352,26 @@ Return ONLY a valid JSON object in this exact format:
 
 
 
-async def chat_response(message, history):
+async def chat_response(messages: list, subject: str = "General", level: str = "Standard") -> str:
     """Chat-based pedagogical assistant."""
     client = get_async_openai_client()
-    messages = [{"role": "system", "content": "You are the EduQuest Pedagogical Assistant. Help the teacher refine their exam."}]
-    for h in history:
-        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
-    messages.append({"role": "user", "content": message})
-    
+    sys_prompt = f"You are the EduQuest Pedagogical Assistant specializing in {subject} ({level}). Help the teacher refine their exam, craft question stems, and design scoring rubrics."
+
+    formatted_messages = [{"role": "system", "content": sys_prompt}]
+    if isinstance(messages, list):
+        for msg in messages:
+            if isinstance(msg, dict) and "content" in msg:
+                formatted_messages.append({
+                    "role": msg.get("role", "user"),
+                    "content": str(msg.get("content", ""))
+                })
+            elif isinstance(msg, str):
+                formatted_messages.append({"role": "user", "content": msg})
+    elif isinstance(messages, str):
+        formatted_messages.append({"role": "user", "content": messages})
+
     try:
-        res = await client.chat.completions.create(model="gpt-4o", messages=messages)
+        res = await client.chat.completions.create(model="gpt-4o", messages=formatted_messages)
         return res.choices[0].message.content
     except Exception as e:
         return f"Chat Error: {e}"
@@ -1377,7 +1389,7 @@ async def generate_scenario_content(subject: str, level: str, theme: str = "", t
 
     try:
         response = await client.chat.completions.create(
-            model="gpt-5",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )

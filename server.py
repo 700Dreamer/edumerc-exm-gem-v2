@@ -24,6 +24,7 @@ from pydantic import BaseModel
 
 from core.ai_engine import generate_ai_content, analyze_pedagogy, chat_response, get_openai_client, generate_scenario_content, generate_illustration, stream_generate_ai_content, analyze_image_needs, generate_nursery_exam, generate_diagrams_for_questions
 from core.secondary_agentic_pipeline import stream_secondary_paper_agentic, regenerate_single_secondary_item
+from core.primary_agentic_pipeline import stream_primary_paper_agentic
 from core.db_engine import save_project, load_projects, init_db
 from core.pdf_engine import save_pdf_background
 from ui.document_builder import build_full_html
@@ -103,7 +104,7 @@ class GenerateRequest(BaseModel):
     view_mode: Optional[str] = "scroll"
     topic: Optional[str] = ""
     brand_name: Optional[str] = "EduQuest"
-    ai_model: Optional[str] = "gpt-5"
+    ai_model: Optional[str] = "gpt-4o"
     content_override: Optional[str] = None
     pedagogy_hint: Optional[dict] = None
     force_images: Optional[bool] = False
@@ -117,7 +118,7 @@ class ScenarioRequest(BaseModel):
     topic: Optional[str] = ""
     difficulty: Optional[str] = "Standard"
     brand_name: Optional[str] = "EduQuest"
-    ai_model: Optional[str] = "gpt-5"
+    ai_model: Optional[str] = "gpt-4o"
     force_images: Optional[bool] = False
 
 class SecondaryRegenerateItemRequest(BaseModel):
@@ -129,15 +130,25 @@ class SecondaryRegenerateItemRequest(BaseModel):
 
 @app.post("/api/scenario-stream")
 async def scenario_stream_endpoint(req: ScenarioRequest):
+    lvl = (req.level or "").lower()
+    is_primary = any(p in lvl for p in ["primary", "p.1", "p.2", "p.3", "p.4", "p.5", "p.6", "p.7", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "ple", "baby", "middle", "top"])
+    
+    generator = stream_primary_paper_agentic(
+        subject=req.subject,
+        level=req.level,
+        theme=req.theme or "",
+        topic=req.topic or ""
+    ) if is_primary else stream_secondary_paper_agentic(
+        subject=req.subject,
+        level=req.level,
+        theme=req.theme or "",
+        topic=req.topic or "",
+        brand_name=req.brand_name or "EDUMERC",
+        question_count=3
+    )
+
     return StreamingResponse(
-        stream_secondary_paper_agentic(
-            subject=req.subject,
-            level=req.level,
-            theme=req.theme,
-            topic=req.topic,
-            brand_name=req.brand_name or "EDUMERC",
-            question_count=3
-        ),
+        generator,
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache, no-transform",

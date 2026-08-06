@@ -2147,13 +2147,32 @@ function ScenarioView({
               if (event.event_type === "header_ready") {
                 setPreviewHtml(`
                   <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
+                    <div id="step-tracker-banner" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:20px;">
+                      <div style="font-size:11px; font-weight:bold; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Agentic Generation Pipeline Steps</span>
+                        <span id="step-status-tag" style="background:#dbeafe; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:10px;">In Progress</span>
+                      </div>
+                      <div style="display:flex; gap:10px; font-size:11px; flex-wrap:wrap;">
+                        <div id="step-pill-1" style="display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:16px; background:#dcfce7; color:#15803d; font-weight:bold;">
+                          <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          Step 1: Exam Header & Blueprint Initialized
+                        </div>
+                        <div id="step-pill-2" style="display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:16px; background:#eff6ff; color:#1d4ed8; font-weight:bold; border:1px solid #3b82f6;">
+                          <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                          Step 2: Generating & Injecting Items...
+                        </div>
+                        <div id="step-pill-3" style="display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:16px; background:#f1f5f9; color:#94a3b8;">
+                          Step 3: Paper Complete & Finalized
+                        </div>
+                      </div>
+                    </div>
                     <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px;">
                       <h2 style="margin: 0; font-size: 20px;">${event.title}</h2>
                       <p style="margin: 4px 0 0 0; font-size: 13px; color: #555;">Duration: ${event.duration} | Total Marks: ${event.total_marks}</p>
                     </div>
                     <div id="streaming-items-canvas" style="display: flex; flex-direction: column; gap: 20px;">
                       <div id="item-skeleton" style="padding: 15px; border: 1px dashed #3b82f6; border-radius: 6px; background: #eff6ff; text-align: center; font-size: 13px; color: #1d4ed8; font-weight: bold; animation: pulse 1.5s infinite;">
-                        Agentic Engine: Drafting Item 1 with 100% ${subject} domain isolation...
+                        Agentic Pipeline Step 2: Generating Item 1...
                       </div>
                     </div>
                   </div>
@@ -2161,7 +2180,7 @@ function ScenarioView({
               } else if (event.event_type === "item_generating") {
                 const skel = document.getElementById("item-skeleton");
                 if (skel) {
-                  skel.innerText = `Agentic Engine: Drafting & Validating Item ${event.item_number} with ${subject} blueprint...`;
+                  skel.innerText = `Agentic Pipeline Step 2: Generating Item ${event.item_number}...`;
                 }
               } else if (event.event_type === "item_verified") {
                 itemsContainer.push(event.item_json);
@@ -2180,11 +2199,28 @@ function ScenarioView({
                         <svg style="width:14px; height:14px; stroke:currentColor;" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         Item ${event.item_number} Verified (${subject})
                       </span>
-                      <span style="background:#dcfce7; padding:2px 8px; border-radius:12px;">Programmatic Check Passed</span>
+                      <span style="background:#dcfce7; padding:2px 8px; border-radius:12px;">Step 2 Completed (Injected)</span>
                     </div>
                     ${event.item_html}
                   `;
                   skel.parentNode?.insertBefore(itemDiv, skel);
+                  skel.innerText = `Agentic Pipeline Step 2: Generated Item ${event.item_number} and injected onto canvas...`;
+                }
+              } else if (event.event_type === "diffusion_pass_0") {
+                const tag = document.getElementById("step-status-tag");
+                if (tag) { tag.innerText = `Pass 0: Draft Generated (${event.score}% Score)`; }
+              } else if (event.event_type === "diffusion_pass_1") {
+                const tag = document.getElementById("step-status-tag");
+                if (tag) { tag.innerText = `Pass 1: Math Solved (${event.score}% Score)`; }
+              } else if (event.event_type === "diffusion_pass_2") {
+                const tag = document.getElementById("step-status-tag");
+                if (tag) { tag.innerText = `Pass 2: Style Polished (${event.score}% Score)`; }
+              } else if (event.event_type === "diffusion_pass_3") {
+                const tag = document.getElementById("step-status-tag");
+                if (tag) {
+                  tag.innerText = `Pass 3: ${event.score}% UNEB Certified`;
+                  tag.style.background = "#dcfce7";
+                  tag.style.color = "#15803d";
                 }
               } else if (event.event_type === "paper_complete") {
                 setPreviewHtml(event.html);
@@ -2674,7 +2710,12 @@ function GeneratorControls({
       setQCount(10);
       setDuration("1 HR");
     } else if (isPrimary) {
-      if (isMaths) {
+      const lvlClean = level.toLowerCase();
+      const isLowerPrimary = ["primary 1", "primary 2", "primary 3", "p.1", "p.2", "p.3", "p1", "p2", "p3"].some(l => lvlClean.includes(l));
+      if (isLowerPrimary) {
+        setQCount(25);
+        setDuration("1 HR 30 MIN");
+      } else if (isMaths) {
         setQCount(32);
         setDuration("2 HR 30 MIN");
       } else {
