@@ -11,6 +11,41 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function filterSubjectsForLevel(lvlName: string, allSubjs: string[], syllabus: any = {}) {
+  if (!allSubjs || allSubjs.length === 0) return [];
+  const normLvl = (lvlName || "").trim().toLowerCase().replace(".", "");
+  const isPrimary = normLvl.includes("primary") || /^p\d+/i.test(normLvl);
+  const isSecondary = normLvl.includes("senior") || /^s\d+/i.test(normLvl) || normLvl.includes("uce") || normLvl.includes("uace");
+  const isNursery = normLvl.includes("baby") || normLvl.includes("middle") || normLvl.includes("top") || normLvl.includes("ecd") || normLvl.includes("nursery");
+
+  const REDUNDANT = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
+
+  return allSubjs.filter((s: string) => {
+    if (REDUNDANT.has(s)) return false;
+    const sLower = s.toLowerCase();
+
+    if (isPrimary) {
+      const isPrimarySubj = sLower === "english" || sLower === "integrated science" || sLower === "mathematics" || sLower.includes("social studies");
+      if (!isPrimarySubj) return false;
+    } else if (isSecondary) {
+      const isSecSubj = ["physics", "chemistry", "biology", "mathematics", "english language", "geography", "history", "entrepreneurship", "ict"].some(sub => sLower.includes(sub));
+      if (!isSecSubj) return false;
+    } else if (isNursery) {
+      const isNurSubj = ["language development", "mathematical concepts", "health and sanitation", "social development"].some(sub => sLower.includes(sub));
+      if (!isNurSubj) return false;
+    }
+
+    if (syllabus && Object.keys(syllabus).length > 0) {
+      const keys = Object.keys(syllabus);
+      const match = keys.find(k => k.toLowerCase() === s.toLowerCase());
+      if (match && syllabus[match]?.[lvlName]) {
+        return syllabus[match][lvlName].length > 0;
+      }
+    }
+    return true;
+  });
+}
+
 const LoginWavesBackground = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -417,7 +452,7 @@ function AssessmentView({ theme }: { theme: string }) {
                      className="w-full text-sm border border-slate-200 rounded-md p-2.5 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
                    >
                      <option value="" disabled>Select Subject...</option>
-                     {subjects.map((s: string) => <option key={s} value={s}>{s}</option>)}
+                     {filterSubjectsForLevel(level, subjects, apiConfig.syllabus).map((s: string) => <option key={s} value={s}>{s}</option>)}
                    </select>
                  </div>
                  
@@ -2102,11 +2137,7 @@ function ScenarioView({
     return [];
   };
 
-  const REDUNDANT_ALIASES = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
-
-  const availableSubjects = (config.subjects || []).filter((s: string) => 
-    !REDUNDANT_ALIASES.has(s) && getSyllabusTopics(s, level).length > 0
-  );
+  const availableSubjects = filterSubjectsForLevel(level, config.subjects || [], config.syllabus);
 
   useEffect(() => {
     if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
@@ -2439,11 +2470,7 @@ function GeneratorControls({
     return [];
   };
 
-  const REDUNDANT_ALIASES = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
-
-  const availableSubjects = (config.subjects || []).filter((s: string) =>
-    !REDUNDANT_ALIASES.has(s) && getSyllabusTopics(s, level).length > 0
-  );
+  const availableSubjects = filterSubjectsForLevel(level, config.subjects || [], config.syllabus);
 
   const availableTopics = getSyllabusTopics(subject, level);
 
@@ -4983,11 +5010,7 @@ function PrimaryBetaView({ setPreviewHtml, isGenerating, setIsGenerating, refres
     }
   }, [primaryLevels]);
 
-  const REDUNDANT_ALIASES = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
-
-  const availableSubjects = (config.subjects || []).filter((s: string) => 
-    !REDUNDANT_ALIASES.has(s)
-  );
+  const availableSubjects = filterSubjectsForLevel(level, config.subjects || [], config.syllabus);
 
   useEffect(() => {
     if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
