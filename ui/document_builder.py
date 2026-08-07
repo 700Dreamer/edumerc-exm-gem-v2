@@ -535,9 +535,7 @@ body {{
     {'<img src="data:image/png;base64,' + logo_b64 + '" style="height:100%">' if logo_b64 else ''}
   </div>
 
-  <div style="text-align:center; margin-top:10px; border-bottom: 2px solid #000; padding-bottom:5px; margin-bottom:20px;">
-    <b style="text-decoration:underline; font-size:14px;">SECTION A ({sec_a_marks} Marks)</b>
-  </div>
+  {"" if ("ENGLISH" in subject.upper() or "PRIMARY" in level.upper()) else f'<div style="text-align:center; margin-top:10px; border-bottom: 2px solid #000; padding-bottom:5px; margin-bottom:20px;"><b style="text-decoration:underline; font-size:14px;">SECTION A ({sec_a_marks} Marks)</b></div>'}
 
   <div class="body-c" id="content-body">
     {parsed_html}
@@ -561,9 +559,7 @@ body {{
       <div style="color:#0066cc; font-weight:900; font-size:12px;">THIS DOCUMENT CONTAINS OFFICIAL ANSWERS AND MARK ALLOCATIONS.</div>
   </div>
   
-  <div style="text-align:center; margin-top:10px; border-bottom: 2px solid #000; padding-bottom:5px; margin-bottom:20px;">
-    <b style="text-decoration:underline; font-size:14px;">SECTION A ({sec_a_marks} Marks)</b>
-  </div>
+  {"" if ("ENGLISH" in subject.upper() or "PRIMARY" in level.upper()) else f'<div style="text-align:center; margin-top:10px; border-bottom: 2px solid #000; padding-bottom:5px; margin-bottom:20px;"><b style="text-decoration:underline; font-size:14px;">SECTION A ({sec_a_marks} Marks)</b></div>'}
 
   <div class="body-c" id="marking-content-body">
     {marking_guide_parsed_html}
