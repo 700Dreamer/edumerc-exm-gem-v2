@@ -150,7 +150,7 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
                 for q in sec_a_qs:
                     instr = q.get("instruction_group")
                     if instr and instr != current_instruction:
-                        instr_block = f"<div style='font-weight:bold; margin-top:20px; margin-bottom:10px; font-size:15px; color:#000;'>{instr}</div>"
+                        instr_block = f"<div style='font-weight:bold; margin-top:20px; margin-bottom:10px; font-size:16px; color:#000;'>{instr}</div>"
                         parsed_html += instr_block
                         marking_guide_parsed_html += instr_block
                         current_instruction = instr
@@ -168,7 +168,7 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
                 for q in sec_b_qs:
                     instr = q.get("instruction_group")
                     if instr and instr != current_instruction:
-                        instr_block = f"<div style='font-weight:bold; margin-top:20px; margin-bottom:10px; font-size:15px; color:#000;'>{instr}</div>"
+                        instr_block = f"<div style='font-weight:bold; margin-top:20px; margin-bottom:10px; font-size:16px; color:#000;'>{instr}</div>"
                         parsed_html += instr_block
                         marking_guide_parsed_html += instr_block
                         current_instruction = instr
@@ -315,13 +315,13 @@ body {{
 .cand-line {{ border-bottom: 2px dotted #000; flex: 1; margin-left: 10px; height: 18px; }}
 
 .col-l {{ display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px; margin-bottom: 30px; }}
-.instr-panel {{ font-size: 11.5px; color: #475569; line-height: 1.6; }}
-.ex-panel table {{ width: 100%; border-collapse: collapse; font-size: 11px; }}
+.instr-panel {{ font-size: 12.5px; color: #475569; line-height: 1.6; }}
+.ex-panel table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
 .ex-panel th {{ border: 1px solid #000; padding: 6px; font-weight:bold; }}
 .ex-panel td {{ border: 1px solid #000; padding: 6px; text-align: center; height: 26px; }}
 
-.body-c {{ font-size: 15.5px; line-height: 2.2; white-space: pre-wrap; font-family: inherit; }}
-.pgn {{ position: absolute; bottom: 15mm; left: 0; width: 100%; text-align: center; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; }}
+.body-c {{ font-size: 16.5px; line-height: 2.2; white-space: pre-wrap; font-family: inherit; }}
+.pgn {{ position: absolute; bottom: 15mm; left: 0; width: 100%; text-align: center; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; }}
 
 /* ── ANSWER LINES ── */
 .ans-lines {{ margin-left: 15px; margin-top: 8px; margin-bottom: 22px; }}
