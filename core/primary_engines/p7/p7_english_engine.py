@@ -310,8 +310,57 @@ Return JSON:
                 
                 # Special Formatting for Q55 (Dialogue Script)
                 elif q_num == 55:
-                    ctx_text = q.get("context_block", "").replace("\\n", "\n")
-                    q["context_block"] = ctx_text
+                    raw_ctx = q.get("context_block", "").replace("\\n", "\n")
+                    lines = raw_ctx.split("\n")
+                    has_ukasha = any(l.strip().startswith("Ukasha:") for l in lines)
+                    if has_ukasha:
+                        cleaned_lines = []
+                        for line in lines:
+                            if line.strip().startswith("Ukasha:"):
+                                cleaned_lines.append("Ukasha: ___________________________________________________")
+                                cleaned_lines.append("        ___________________________________________________")
+                            else:
+                                cleaned_lines.append(line)
+                        q["context_block"] = "\n".join(cleaned_lines)
+                    else:
+                        q["context_block"] = """Enock: Hello Ukasha, what have you been doing in your class?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Having a meeting! What was the meeting about?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Starting a school newspaper! What kind of news are you going to write?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Local and foreign news! Who were chosen to be the chief editor and journalists?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Biko, Twine, and Maggie! Why were they chosen?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: For being good at English! Which articles are you going to write?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: About sports, education, and politics! Who will draw the cartoons?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Collin! Is he good at drawing cartoons?
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Indeed he deserved it. I wish him success.
+Ukasha: ___________________________________________________
+        ___________________________________________________
+
+Enock: Goodbye, Ukasha.
+Ukasha: ___________________________________________________"""
                     q["sub_questions"] = [] # No duplicate lines below the dialogue box
 
                 elif q.get("context_block"):
