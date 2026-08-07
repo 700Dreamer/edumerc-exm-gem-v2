@@ -21,6 +21,142 @@ def safe_int(val, default=0):
             return int(nums[0])
     return default
 
+def derive_question_topic_and_competency(q: dict, subject: str, level: str) -> tuple:
+    num = q.get("number", "?")
+    text = q.get("text", "")
+    topic = q.get("topic", "")
+    competency = q.get("competency") or q.get("testing_intent") or q.get("competency_tested") or ""
+    cognitive = q.get("cognitive_level", "")
+    
+    sub_text = ""
+    if q.get("sub_questions"):
+        sub_text = " ".join([str(sq.get("text", "")) for sq in q["sub_questions"]])
+        
+    full_context = (str(text) + " " + str(sub_text)).strip()
+    full_lower = full_context.lower()
+
+    if not topic:
+        s_lower = (subject or "").lower()
+        if "science" in s_lower:
+            if any(w in full_lower for w in ["heart", "eye", "lung", "blood", "organ", "kidney", "excretory", "teeth", "body"]):
+                topic = "Human Anatomy, Organs & Physiology"
+            elif any(w in full_lower for w in ["latrine", "disease", "vaccine", "hygiene", "malaria", "bilharzia", "tetanus", "refuse"]):
+                topic = "Personal Hygiene, Sanitation & Public Health"
+            elif any(w in full_lower for w in ["soil", "erosion", "plant", "germination", "crop", "cassava", "fungi", "worm", "cattle", "poultry", "sheep"]):
+                topic = "Agriculture, Crop Husbandry & Animal Keeping"
+            elif any(w in full_lower for w in ["energy", "circuit", "magnet", "friction", "density", "volume", "machine", "water cycle", "matter"]):
+                topic = "Physical Science, Energy & Mechanics"
+            else:
+                topic = "Integrated Science Core Strand"
+        elif "social" in s_lower or "sst" in s_lower:
+            if any(w in full_lower for w in ["christian", "islam", "god", "allah", "bible", "quran", "prophet", "commandment", "prayer", "sharia"]):
+                topic = "Religious Education (RE)"
+            elif any(w in full_lower for w in ["ecowas", "eac", "oau", "au", "great trek", "berlin", "pan-african", "independence", "colonial", "monarchy"]):
+                topic = "African History & Regional Integration"
+            elif any(w in full_lower for w in ["map", "latitude", "equator", "vegetation", "weather", "desert", "river", "gezira", "wind"]):
+                topic = "Physical Geography & Environment"
+            else:
+                topic = "Civics, Governance & Social Development"
+        elif "english" in s_lower:
+            if "passage" in full_lower or "story" in full_lower:
+                topic = "Reading Comprehension & Contextual Vocabulary"
+            elif "poem" in full_lower:
+                topic = "Poetry Analysis & Literary Interpretation"
+            elif "table" in full_lower or "record" in full_lower or "medical" in full_lower:
+                topic = "Graphic Data & Health Record Interpretation"
+            elif "dialogue" in full_lower or "letter" in full_lower:
+                topic = "Functional Communication & Guided Composition"
+            else:
+                topic = "Grammar, Structural Patterns & Vocabulary"
+        else:
+            topic = "General Subject Strand"
+
+    if not competency:
+        if "calculate" in full_lower or "find the volume" in full_lower or "density" in full_lower:
+            competency = "Tests student's ability to apply mathematical formulas, solve density/volume problems, and show clear working steps."
+            cognitive = cognitive or "Application & Problem Solving"
+        elif "diagram" in full_lower or "svg" in full_lower or "marked" in full_lower or "eye" in full_lower:
+            competency = "Tests student's visual interpretation skills, organ structure identification, and functional analysis of biological diagrams."
+            cognitive = cognitive or "Analysis & Diagram Interpretation"
+        elif "table" in full_lower or "complete the table" in full_lower:
+            competency = "Tests student's skill in analyzing tabulated data, categorizing resources, and filling missing information."
+            cognitive = cognitive or "Data Categorization & Analysis"
+        elif "read the passage" in full_lower or "story" in full_lower:
+            competency = "Tests student's reading comprehension, factual recall from narrative text, and ability to deduce contextual meaning of vocabulary."
+            cognitive = cognitive or "Comprehension & Text Analysis"
+        elif "read the poem" in full_lower:
+            competency = "Tests student's poetic interpretation, stanza structure analysis, identification of central themes, and literary vocabulary."
+            cognitive = cognitive or "Poetic Analysis & Interpretation"
+        elif "dialogue" in full_lower or "letter" in full_lower or "you are a pupil" in full_lower:
+            competency = "Tests student's functional writing ability, adherence to formal letter/dialogue conventions, and proper grammar flow."
+            cognitive = cognitive or "Synthesis & Functional Writing"
+        elif "either" in full_lower and "or" in full_lower:
+            competency = "Tests student's knowledge of religious principles, moral values, and comparative understanding in Christian/Islamic teachings."
+            cognitive = cognitive or "Evaluation & Moral Reasoning"
+        elif any(verb in full_lower for verb in ["why", "explain", "differentiate", "give a reason", "how", "describe"]):
+            competency = f"Tests student's conceptual understanding and ability to explain cause-and-effect relationships in {topic.lower()}."
+            cognitive = cognitive or "Comprehension & Explanation"
+        else:
+            competency = f"Tests student's knowledge retention and recall of fundamental facts in {topic.lower()}."
+            cognitive = cognitive or "Knowledge & Recall"
+
+    return topic, competency, cognitive
+
+def build_reference_map_html(questions: list, subject: str, level: str, brand_name: str, logo_b64: str) -> str:
+    rows = []
+    for q in questions:
+        num = q.get("number", "?")
+        marks = q.get("marks", 1)
+        topic, competency, cognitive = derive_question_topic_and_competency(q, subject, level)
+        
+        rows.append(f"""
+        <tr style="border-bottom: 1px solid #cbd5e1; font-size: 11px;">
+            <td style="padding: 8px 6px; font-weight: 900; text-align: center; vertical-align: top; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #0284c7;">Q{num}</td>
+            <td style="padding: 8px 8px; font-weight: 700; color: #0f172a; vertical-align: top; border-right: 1px solid #cbd5e1;">{topic}</td>
+            <td style="padding: 8px 8px; color: #334155; vertical-align: top; border-right: 1px solid #cbd5e1; line-height: 1.4;">{competency}</td>
+            <td style="padding: 8px 6px; text-align: center; vertical-align: top; font-weight: 600; color: #475569; border-right: 1px solid #cbd5e1;">{cognitive}</td>
+            <td style="padding: 8px 6px; text-align: center; font-weight: bold; color: #0284c7; vertical-align: top;">{marks} {'Mark' if marks == 1 else 'Marks'}</td>
+        </tr>
+        """)
+        
+    table_rows_html = "".join(rows) if rows else "<tr><td colspan='5' style='text-align:center; padding:20px; color:#94a3b8;'>No Question Competency Data Available</td></tr>"
+    
+    logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height:100%">' if logo_b64 else ''
+
+    return f"""
+<!-- PAGE 4: PEDAGOGICAL REFERENCE MAP & COMPETENCY AUDIT (GENERATED AFTER MARKING GUIDE) -->
+<div class="page" id="refMapP" style="display: none;">
+  <div class="brand-logo" style="opacity:0.2; position:absolute; top:20px; right:20px; height:40px;">
+    {logo_html}
+  </div>
+  <div class="brand-h" style="border-bottom: 4px solid #0284c7;">
+    <div>
+      <div class="brand-name" style="color: #0284c7;">{brand_name}</div>
+      <div style="font-size:11px; font-weight:900; letter-spacing:4px; color: #0284c7;">PEDAGOGICAL REFERENCE MAP & COMPETENCY AUDIT</div>
+    </div> 
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+      <div class="doc-t" style="background:#0284c7; color: white; padding: 4px 10px; border-radius: 4px; display: inline-block; font-weight:bold; font-size:11px;">CONFIDENTIAL TEACHER & CURRICULUM AUDIT COPY</div>
+      <div style="color:#0284c7; font-weight:900; font-size:11px;">MAPPED FOR SYLLABUS SATURATION & LEARNING OUTCOME VERIFICATION</div>
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #cbd5e1; background: #fff;">
+      <thead>
+          <tr style="background: #0284c7; color: #ffffff; font-size: 11px; text-transform: uppercase;">
+              <th style="padding: 8px 6px; width: 45px; text-align: center; border-right: 1px solid #0369a1;">Qn</th>
+              <th style="padding: 8px 8px; width: 180px; text-align: left; border-right: 1px solid #0369a1;">Syllabus Topic & Strand</th>
+              <th style="padding: 8px 8px; text-align: left; border-right: 1px solid #0369a1;">What Question Tests from Student (Target Competency)</th>
+              <th style="padding: 8px 6px; width: 135px; text-align: center; border-right: 1px solid #0369a1;">Cognitive Domain</th>
+              <th style="padding: 8px 6px; width: 55px; text-align: center;">Marks</th>
+          </tr>
+      </thead>
+      <tbody>
+          {table_rows_html}
+      </tbody>
+  </table>
+</div>
+"""
+
 def build_examiners_table_rows(total_q_count, sec_a_count=40):
     if not total_q_count or total_q_count <= 0:
         total_q_count = 50
@@ -122,6 +258,7 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     """
 
     # ── PARSE JSON TO HTML & EXTRACT ANSWER KEY ──
+    ref_map_page_html = ""
     try:
         data = json.loads(content_raw)
         parsed_html = ""
@@ -140,6 +277,7 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
 
         if mode == "Exams":
             questions = data.get("questions", [])
+            ref_map_page_html = build_reference_map_html(questions, subject, level, brand_name, logo_b64)
 
             # Separate into Section A and Section B lists
             sec_a_qs = [q for q in questions if safe_int(q.get("number", 0)) <= sec_a_count]
@@ -466,37 +604,55 @@ body {{
             document_body = f"""
 <!-- PAGE 1: HEADER & INSTRUCTIONS -->
 <div class="page tmpl-uneb" id="mainP">
-  <!-- OFFICIAL EXAM HEADER -->
-  <div style="text-align: center; font-family: inherit; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 12px;">
-    <div style="font-size: 18px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #000;">EDUQUEST EXAMINATIONS BOARD</div>
-    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 3px; color: #000;">PRIMARY ASSESSMENT EXAMINATION</div>
-    <div style="font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; color: #000;">{subject.upper()}</div>
-    <div style="font-size: 14px; font-weight: 800; text-transform: uppercase; margin-top: 3px; color: #333;">{level.upper()}</div>
-    <div style="font-size: 13.5px; font-weight: bold; margin-top: 6px; color: #000;">Time allowed: {official_duration}</div>
+  <div style="font-weight: bold; font-size: 13px; margin-bottom: 5px; display:flex; justify-content:space-between; align-items:center;">
+    <span>{school_name}</span>
+    <span style="border: 1px solid #000; padding: 2px 6px; font-size: 11px;">PLE {exam_year}</span>
   </div>
 
-  <!-- CANDIDATE IDENTIFICATION BOX -->
-  <div style="border: 1.5px solid #000; padding: 12px 16px; margin-bottom: 20px; font-family: inherit; font-size: 13px; background: white;">
-    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-      <span style="font-weight: bold; margin-right: 8px;">Candidate's Name:</span> 
-      <div style="flex: 1; border-bottom: 1.5px dotted #000; height: 16px;"></div>
+  <div class="header-box">
+    <div style="font-size:16px; font-weight:bold;">{exam_type}</div>
+    <div style="font-size:24px; font-weight:900; margin:4px 0;">{level}</div>
+    <div style="font-size:20px; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">{subject}</div>
+    <div style="font-size:12px; margin-top:4px;">Time Allowed: {official_duration}</div>
+  </div>
+
+  <div style="display: flex; gap: 20px; margin-top: 15px;">
+    <div style="flex: 1;">
+      <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+        <span style="font-weight: bold; min-width: 130px; font-size:12px;">Candidate's Name:</span>
+        <div style="flex: 1; border-bottom: 1px dotted #000;"></div>
+      </div>
+      <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+        <span style="font-weight: bold; min-width: 130px; font-size:12px;">Candidate's Reg. No:</span>
+        <div style="display: flex; gap: 2px; align-items: center;">
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <span style="font-weight: bold; margin: 0 1px;">/</span>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+        <span style="font-weight: bold; min-width: 130px; font-size:12px;">District Name:</span>
+        <div style="flex: 1; border-bottom: 1px dotted #000;"></div>
+      </div>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-weight: bold;">Candidate's Random No.</span> 
-        <div style="display: flex; gap: 2px;">
-          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
-          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
-          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
-          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+    
+    <div style="width: 260px;">
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <span style="font-weight: bold; font-size:12px;">Random No.</span>
+        <div style="display: flex; gap: 2px; align-items: center;">
           <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
           <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
           <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
           <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-weight: bold;">Personal No.</span> 
+      <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+        <span style="font-weight: bold; font-size:12px;">Personal No.</span>
         <div style="display: flex; gap: 2px; align-items: center;">
           <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
           <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
@@ -512,17 +668,6 @@ body {{
   </div>
 
   <div class="col-l" style="margin-top:15px;">{left_col}{right_col}</div>
-</div>
-
-<!-- REFERENCE MAP PAGE (NEW) -->
-<div class="page" id="refMapP" style="display: none;">
-  <div class="brand-h">
-    <div>
-      <div class="brand-name">{brand_name}</div>
-      <div style="font-size:11px; font-weight:900; letter-spacing:5px;">CURRICULUM ALIGNMENT</div>
-    </div> 
-  </div>
-  {syllabus_table}
 </div>
 
 <!-- PAGE 2: CONTENT -->
@@ -560,6 +705,8 @@ body {{
     {marking_guide_parsed_html}
   </div>
 </div>
+
+{ref_map_page_html}
 """
 
     template += document_body
