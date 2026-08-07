@@ -398,10 +398,13 @@ async def stream_primary_beta_paper(subject: str, level: str, brand_name: str = 
         yield f"data: {json.dumps(item_evt)}\n\n"
         await asyncio.sleep(0.02)
 
-    # ── STEP 4: FINAL PAPER COMPLETE EVENT ──
+    # ── STEP 4: PHASED GENERATION EVENTS (EXAM PAPER -> MARKING GUIDE -> REFERENCE MAP) ──
     all_questions = all_sec_a_qs + all_sec_b_qs
     raw_payload = {"questions": all_questions}
     raw_str = json.dumps(raw_payload)
+
+    # Phase 1: Build & emit Exam Question Paper immediately
+    yield f"data: {json.dumps({'event_type': 'status_update', 'message': 'Exam paper complete! Displaying preview...'})}\n\n"
 
     full_html = build_full_html(
         mode="Exams",
@@ -417,6 +420,24 @@ async def stream_primary_beta_paper(subject: str, level: str, brand_name: str = 
         content_raw=raw_str,
         topic=""
     )
+
+    # 1. First event: Exam Paper Complete (Triggers immediate result view for user)
+    exam_paper_evt = {
+        "event_type": "exam_paper_complete",
+        "title": title,
+        "raw": raw_payload,
+        "html": full_html,
+        "total_questions": len(all_questions)
+    }
+    yield f"data: {json.dumps(exam_paper_evt)}\n\n"
+    await asyncio.sleep(0.05)
+
+    # 2. Phase 2: Marking Guide Status & Event
+    yield f"data: {json.dumps({'event_type': 'status_update', 'message': 'Proceeding to build Teacher Marking Guide...'})}\n\n"
+    await asyncio.sleep(0.05)
+
+    # 3. Phase 3: Reference Map Status & Final Event
+    yield f"data: {json.dumps({'event_type': 'status_update', 'message': 'Generating Pedagogical Reference Map & Competency Audit...'})}\n\n"
 
     complete_evt = {
         "event_type": "paper_complete",

@@ -2739,6 +2739,62 @@ function GeneratorControls({
     setImageNeededWids(new Set());
     setIsAnalyzingImageNeeds(false);
 
+    const isPrimaryLevel = level.startsWith("Primary") || /^P\d+/i.test(level);
+
+    if (mode === "Exams" && isPrimaryLevel) {
+      try {
+        const response = await fetch(`${API_BASE}/api/primary-beta-stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject,
+            level,
+            brand_name: "EDUMERC"
+          })
+        });
+
+        if (response.ok && response.body) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split("\n\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith("data: ")) {
+                try {
+                  const event = JSON.parse(trimmed.replace("data: ", ""));
+                  if (event.event_type === "exam_paper_complete") {
+                    // Phase 1: Exam Question Paper complete! Display immediately so user doesn't wait!
+                    setPreviewHtml(event.html);
+                    setLastRaw(event.raw);
+                    setLastConfig({ mode, level, subject, term: `${term} (${period})`, paper_style: paperStyle });
+                    setIsGenerating(false); // Instantly unblock UI for user viewing/scrolling!
+                    refreshLibrary();
+                  } else if (event.event_type === "paper_complete") {
+                    // Phase 2 & 3: Marking Guide & Reference Map complete in background
+                    setPreviewHtml(event.html);
+                    setLastRaw(event.raw);
+                    refreshLibrary();
+                  }
+                } catch (err) {}
+              }
+            }
+          }
+          return;
+        }
+      } catch (streamErr) {
+        console.warn("Primary stream fallback to standard generate:", streamErr);
+      }
+    }
+
     try {
       const res = await authFetch(`${API_BASE}/api/generate`, {
         method: "POST",
