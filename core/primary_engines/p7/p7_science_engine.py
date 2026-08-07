@@ -26,7 +26,7 @@ INSTRUCTION: "In each of the questions {start_num} to {end_num}, answer the ques
 
 Generate exactly {count} short-answer primary science questions for Primary 7 starting at Q{start_num}.
 - Directly test core Ugandan P.7 Science syllabus strands: Human body & Health, Energy & Matter, Agriculture & Environment, Living things & Classification.
-- Each item MUST have "type": "short_answer", "marks": 1.
+- Each item MUST have "type": "short_answer", "marks": 1, and an explicit, concise curriculum "answer".
 - Provide dotted line fill space at the end of each stem: "..........................................".
 
 Return JSON:
@@ -36,7 +36,8 @@ Return JSON:
       "number": {start_num},
       "text": "State the main function of the human heart. ..........................................",
       "type": "short_answer",
-      "marks": 1
+      "marks": 1,
+      "answer": "To pump blood to all parts of the human body."
     }}
   ]
 }}
@@ -70,7 +71,7 @@ REQUIREMENT: Exactly 4 MARKS TOTAL for Q{q_num}.
 Generate Question {q_num} for Section B:
 - "text": MUST be the introductory context statement: "{statement}"
 - "type": "structured", "marks": 4
-- "sub_questions": Exactly 3 to 4 sub-questions (a), (b), (c), (d) containing the actual questions and totaling exactly 4 marks.
+- "sub_questions": Exactly 3 to 4 sub-questions (a), (b), (c), (d) containing the actual questions, marks, and explicit "answer" values for each sub-question.
 - Include HTML tables or SVG diagrams in "context_block" where applicable.
 
 Return JSON:
@@ -83,9 +84,9 @@ Return JSON:
       "type": "structured",
       "marks": 4,
       "sub_questions": [
-        {{ "label": "(a)", "text": "State the main function...", "marks": 1 }},
-        {{ "label": "(b)", "text": "Give two reasons...", "marks": 2 }},
-        {{ "label": "(c)", "text": "Name one example...", "marks": 1 }}
+        {{ "label": "(a)", "text": "State the main function...", "marks": 1, "answer": "Exact concise answer for sub-question (a)" }},
+        {{ "label": "(b)", "text": "Give two reasons...", "marks": 2, "answer": "Exact concise answer for sub-question (b)" }},
+        {{ "label": "(c)", "text": "Name one example...", "marks": 1, "answer": "Exact concise answer for sub-question (c)" }}
       ]
     }}
   ]
@@ -110,6 +111,8 @@ Return JSON:
                 q["number"] = qnum
                 q["type"] = "short_answer"
                 q["marks"] = 1
+                if not q.get("answer"):
+                    q["answer"] = "Correct response as per primary science curriculum."
                 raw_text = q.get("text", "")
                 if "...." not in raw_text and "____" not in raw_text:
                     raw_text += " .........................................."
@@ -121,52 +124,54 @@ Return JSON:
             print(f"P7 Science Sec A Chunk Error (Q{start_num}): {e}")
             fallback = []
             sample_science_qs = {
-                1: "Name the type of latrine that separates faeces from urine. ..........................................",
-                2: "Identify the source of kinetic energy used in the production of electricity at a geothermal power station. ..........................................",
-                3: "Give the meaning of the term soil erosion. ..........................................",
-                4: "Identify the role of the liver as an excretory organ. ..........................................",
-                5: "Name the property of magnets used in a magnetic compass. ..........................................",
-                6: "Give one way in which a compass is useful to pilots. ..........................................",
-                7: "Apart from adolescent girls, give one other group of people who receive Tetanus Toxoid vaccine during immunization. ..........................................",
-                8: "Mention any one human activity that can lead to soil exhaustion. ..........................................",
-                9: "Name the germ that causes bilharzia in humans. ..........................................",
-                10: "Identify the group of living things to which a butterfly belongs. ..........................................",
-                11: "Give any one exotic breed of rabbits kept in your community. ..........................................",
-                12: "Identify any one example of non-living resources in the environment. ..........................................",
-                13: "Mention any one example of common accidents on roads. ..........................................",
-                14: "Give any one way in which fungi are harmful to people in the environment. ..........................................",
-                15: "State any one way in which friction can be reduced in machines. ..........................................",
-                16: "Name the organ in the human body responsible for filtering blood to produce urine. ..........................................",
-                17: "Identify the part of an insect which performs the same function as the human lung. ..........................................",
-                18: "State any one condition that leads to swarming of bees. ..........................................",
-                19: "Identify any one example of plant habitats. ..........................................",
-                20: "Mention any one type of chicken kept for egg production. ..........................................",
-                21: "State the danger of teenage pregnancy to young girls. ..........................................",
-                22: "Give any one reason why sheep farmers carry out docking. ..........................................",
-                23: "State the cause of marasmus in young children. ..........................................",
-                24: "State how isolation of infected animals prevents viral diseases in cattle. ..........................................",
-                25: "Give any one activity at home that requires the filtration method. ..........................................",
-                26: "State any one way conducting health parades promotes health at school. ..........................................",
-                27: "Give any one characteristic of living things. ..........................................",
-                28: "Identify one material used for keeping the human body clean. ..........................................",
-                29: "Give any one advantage of breast feeding to the family. ..........................................",
-                30: "Mention any one way roughage helps to prevent constipation. ..........................................",
-                31: "State the function of red blood cells in the human body. ..........................................",
-                32: "Identify the gas absorbed by green plants during photosynthesis. ..........................................",
-                33: "State the primary source of energy for the water cycle. ..........................................",
-                34: "Give any one example of an inclined plane used at school. ..........................................",
-                35: "Name the vector that spreads malaria fever to humans. ..........................................",
-                36: "State any one danger of wind in the environment. ..........................................",
-                37: "Give any one use of animal cow dung to people. ..........................................",
-                38: "Name any one disease that spreads due to poor disposal of refuse. ..........................................",
-                39: "Why should people spread out their beddings regularly in sunlight? ..........................................",
-                40: "State the function of the fuse in an electric circuit. .........................................."
+                1: ("Name the type of latrine that separates faeces from urine. ..........................................", "Ecological sanitation (EcoSan) latrine / Urine-diverting dry toilet."),
+                2: ("Identify the source of kinetic energy used in the production of electricity at a geothermal power station. ..........................................", "High pressure steam / Pressurized underground steam."),
+                3: ("Give the meaning of the term soil erosion. ..........................................", "The washing away or removal of topsoil by water, wind, or human activities."),
+                4: ("Identify the role of the liver as an excretory organ. ..........................................", "Deamination of excess amino acids into urea / Excretion of bile pigments."),
+                5: ("Name the property of magnets used in a magnetic compass. ..........................................", "A freely suspended magnet always points in a North-South direction."),
+                6: ("Give one way in which a compass is useful to pilots. ..........................................", "Helps pilots to navigate and determine correct direction during flight."),
+                7: ("Apart from adolescent girls, give one other group of people who receive Tetanus Toxoid vaccine during immunization. ..........................................", "Pregnant women / Workers with open dirty wounds."),
+                8: ("Mention any one human activity that can lead to soil exhaustion. ..........................................", "Overcropping / Monoculture / Excessive bush burning."),
+                9: ("Name the germ that causes bilharzia in humans. ..........................................", "Schistosoma worm (Blood fluke)."),
+                10: ("Identify the group of living things to which a butterfly belongs. ..........................................", "Insects (Arthropods)."),
+                11: ("Give any one exotic breed of rabbits kept in your community. ..........................................", "New Zealand White / California White / Chinchilla."),
+                12: ("Identify any one example of non-living resources in the environment. ..........................................", "Soil / Water / Rocks / Air."),
+                13: ("Mention any one example of common accidents on roads. ..........................................", "Vehicle collisions / Overturning of vehicles / Running over pedestrians."),
+                14: ("Give any one way in which fungi are harmful to people in the environment. ..........................................", "Causes ringworm and athlete's foot / Spoils food."),
+                15: ("State any one way in which friction can be reduced in machines. ..........................................", "Lubricating moving parts with oil or grease / Using ball bearings."),
+                16: ("Name the organ in the human body responsible for filtering blood to produce urine. ..........................................", "Kidney / Kidneys."),
+                17: ("Identify the part of an insect which performs the same function as the human lung. ..........................................", "Spiracles (Tracheal system)."),
+                18: ("State any one condition that leads to swarming of bees. ..........................................", "Overcrowding in hive / Shortage of food and water."),
+                19: ("Identify any one example of plant habitats. ..........................................", "Forest / Wetland / Desert / Savanna grassland."),
+                20: ("Mention any one type of chicken kept for egg production. ..........................................", "Layers (e.g., White Leghorn)."),
+                21: ("State the danger of teenage pregnancy to young girls. ..........................................", "Obstructed labor / School dropout / Fistula (VVF)."),
+                22: ("Give any one reason why sheep farmers carry out docking. ..........................................", "Prevents accumulation of dirt around tail / Easy mating."),
+                23: ("State the cause of marasmus in young children. ..........................................", "Severe deficiency of carbohydrates and total energy (calories) in diet."),
+                24: ("State how isolation of infected animals prevents viral diseases in cattle. ..........................................", "Prevents spread of airborne droplets and direct contact transmission of viruses."),
+                25: ("Give any one activity at home that requires the filtration method. ..........................................", "Filtering drinking water / Straining local tea."),
+                26: ("State any one way conducting health parades promotes health at school. ..........................................", "Promotes personal hygiene checks (clean nails, uniform, hair)."),
+                27: ("Give any one characteristic of living things. ..........................................", "Feeding (nutrition) / Respiration / Excretion / Growth / Reproduction."),
+                28: ("Identify one material used for keeping the human body clean. ..........................................", "Clean water / Soap / Sponge / Towel."),
+                29: ("Give any one advantage of breast feeding to the family. ..........................................", "Saves money spent on infant milk formula / Strengthens child immunity."),
+                30: ("Mention any one way roughage helps to prevent constipation. ..........................................", "Adds bulk to digested food and promotes peristalsis in intestines."),
+                31: ("State the function of red blood cells in the human body. ..........................................", "Transports oxygen from lungs to all body tissues using hemoglobin."),
+                32: ("Identify the gas absorbed by green plants during photosynthesis. ..........................................", "Carbon dioxide gas."),
+                33: ("State the primary source of energy for the water cycle. ..........................................", "The Sun (Solar energy)."),
+                34: ("Give any one example of an inclined plane used at school. ..........................................", "Ramp for wheelchairs / Slanted loading plank."),
+                35: ("Name the vector that spreads malaria fever to humans. ..........................................", "Female Anopheles mosquito."),
+                36: ("State any one danger of wind in the environment. ..........................................", "Blows off roofs of buildings / Destroys crops."),
+                37: ("Give any one use of animal cow dung to people. ..........................................", "Used as manure for crops / Used to generate biogas."),
+                38: ("Name any one disease that spreads due to poor disposal of refuse. ..........................................", "Cholera / Dysentery / Typhoid."),
+                39: ("Why should people spread out their beddings regularly in sunlight? ..........................................", "Kills bedbugs, fleas, and germs, and removes moisture/dampness."),
+                40: ("State the function of the fuse in an electric circuit. ..........................................", "Breaks circuit by melting when excessive electric current flows, preventing fire.")
             }
             for idx in range(count):
                 qnum = start_num + idx
+                q_text, q_ans = sample_science_qs.get(qnum, ("State one importance of science in daily life. ..........................................", "Helps in understanding natural phenomena and solving problems."))
                 fallback.append({
                     "number": qnum,
-                    "text": sample_science_qs.get(qnum, f"State one importance of science in daily life. .........................................."),
+                    "text": q_text,
+                    "answer": q_ans,
                     "type": "short_answer",
                     "marks": 1
                 })
@@ -203,9 +208,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "State any one way of caring for cassava crops in the garden.", "marks": 1 },
-                        { "label": "(b)", "text": "State any one way of caring for coco yams.", "marks": 1 },
-                        { "label": "(c)", "text": "Mention any two ways of processing cassava after harvesting.", "marks": 2 }
+                        { "label": "(a)", "text": "State any one way of caring for cassava crops in the garden.", "marks": 1, "answer": "Weeding / Mulching / Earthing up cassava plants." },
+                        { "label": "(b)", "text": "State any one way of caring for coco yams.", "marks": 1, "answer": "Irrigating soil / Applying organic manure / Removing weeds." },
+                        { "label": "(c)", "text": "Mention any two ways of processing cassava after harvesting.", "marks": 2, "answer": "Peeling and sun-drying / Fermenting / Grinding dried chips into flour." }
                     ]
                 },
                 42: {
@@ -215,10 +220,10 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Name the part marked A in the diagram.", "marks": 1 },
-                        { "label": "(b)", "text": "State the function of the part marked A.", "marks": 1 },
-                        { "label": "(c)", "text": "State any one characteristic of the image formed at part K.", "marks": 1 },
-                        { "label": "(d)", "text": "Give one defect of the human eye.", "marks": 1 }
+                        { "label": "(a)", "text": "Name the part marked A in the diagram.", "marks": 1, "answer": "Lens (Eye lens)" },
+                        { "label": "(b)", "text": "State the function of the part marked A.", "marks": 1, "answer": "Refracts and focuses light rays onto the retina." },
+                        { "label": "(c)", "text": "State any one characteristic of the image formed at part K.", "marks": 1, "answer": "Real / Inverted (upside down) / Diminished (smaller than object)." },
+                        { "label": "(d)", "text": "Give one defect of the human eye.", "marks": 1, "answer": "Short-sightedness (Myopia) / Long-sightedness (Hypermetropia)." }
                     ]
                 },
                 43: {
@@ -228,9 +233,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Apart from deep litter system, give any two other systems of keeping poultry.", "marks": 2 },
-                        { "label": "(b)", "text": "Explain one way in which perches control poultry vices in a deep litter system.", "marks": 1 },
-                        { "label": "(c)", "text": "Mention one common disease that affects poultry.", "marks": 1 }
+                        { "label": "(a)", "text": "Apart from deep litter system, give any two other systems of keeping poultry.", "marks": 2, "answer": "Free range system / Battery cage system / Fold unit system." },
+                        { "label": "(b)", "text": "Explain one way in which perches control poultry vices in a deep litter system.", "marks": 1, "answer": "Perches keep birds elevated reducing overcrowding on floor and preventing feather pecking." },
+                        { "label": "(c)", "text": "Mention one common disease that affects poultry.", "marks": 1, "answer": "Newcastle disease / Fowl pox / Coccidiosis / Gumboro." }
                     ]
                 },
                 44: {
@@ -239,6 +244,7 @@ Return JSON:
                     "context_block": "<table border='1' style='border-collapse:collapse; width:100%; text-align:center; font-size:13px; border:1px solid #000;'><tr style='background:#f1f5f9;'><th>Energy Resource</th><th>Source</th></tr><tr><td>Biomass energy</td><td>(i) ..........................................</td></tr><tr><td>Uranium</td><td>(ii) ..........................................</td></tr><tr><td>Biogas</td><td>(iii) ..........................................</td></tr><tr><td>Wind energy</td><td>(iv) ..........................................</td></tr></table>",
                     "type": "structured",
                     "marks": 4,
+                    "answer": "(i) Plants / Trees / Wood, (ii) Minerals / Rocks, (iii) Cow dung / Animal waste, (iv) Moving air",
                     "sub_questions": []
                 },
                 45: {
@@ -248,10 +254,10 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(i)", "text": "Step 1: ....................................................................................................", "marks": 1 },
-                        { "label": "(ii)", "text": "Step 2: ....................................................................................................", "marks": 1 },
-                        { "label": "(iii)", "text": "Step 3: ....................................................................................................", "marks": 1 },
-                        { "label": "(iv)", "text": "Step 4: ....................................................................................................", "marks": 1 }
+                        { "label": "(i)", "text": "Step 1: ....................................................................................................", "marks": 1, "answer": "Apply toothpaste onto toothbrush bristles." },
+                        { "label": "(ii)", "text": "Step 2: ....................................................................................................", "marks": 1, "answer": "Rinse mouth with clean water." },
+                        { "label": "(iii)", "text": "Step 3: ....................................................................................................", "marks": 1, "answer": "Brushing teeth thoroughly in up and down motions." },
+                        { "label": "(iv)", "text": "Step 4: ....................................................................................................", "marks": 1, "answer": "Rinse mouth thoroughly with clean water and spit out foam." }
                     ]
                 },
                 46: {
@@ -261,9 +267,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Identify any two properties of matter.", "marks": 2 },
-                        { "label": "(b)", "text": "Name the state of matter in which heat travels fastest by convection.", "marks": 1 },
-                        { "label": "(c)", "text": "Name the state of matter in which heat travels fastest by conduction.", "marks": 1 }
+                        { "label": "(a)", "text": "Identify any two properties of matter.", "marks": 2, "answer": "Has mass / Occupies space (has volume)." },
+                        { "label": "(b)", "text": "Name the state of matter in which heat travels fastest by convection.", "marks": 1, "answer": "Gases" },
+                        { "label": "(c)", "text": "Name the state of matter in which heat travels fastest by conduction.", "marks": 1, "answer": "Solids" }
                     ]
                 },
                 47: {
@@ -273,10 +279,10 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Identify the process that is taking place at B.", "marks": 1 },
-                        { "label": "(b)", "text": "State any one danger of prolonged hot sun in the environment.", "marks": 1 },
-                        { "label": "(c)", "text": "State any one danger of heavy dark clouds in the environment.", "marks": 1 },
-                        { "label": "(d)", "text": "Give one way in which plants are important in the water cycle.", "marks": 1 }
+                        { "label": "(a)", "text": "Identify the process that is taking place at B.", "marks": 1, "answer": "Evaporation" },
+                        { "label": "(b)", "text": "State any one danger of prolonged hot sun in the environment.", "marks": 1, "answer": "Drying up of water bodies / Drought / Wilting of crops." },
+                        { "label": "(c)", "text": "State any one danger of heavy dark clouds in the environment.", "marks": 1, "answer": "Causes destructive hailstorms, flooding, and soil erosion." },
+                        { "label": "(d)", "text": "Give one way in which plants are important in the water cycle.", "marks": 1, "answer": "Plants release water vapor into atmosphere through transpiration." }
                     ]
                 },
                 48: {
@@ -286,10 +292,10 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Identify the nitrogenous waste found in human urine.", "marks": 1 },
-                        { "label": "(b)", "text": "State any one function of the kidney in the human body.", "marks": 1 },
-                        { "label": "(c)", "text": "Give a reason why wetlands are referred to as the natural kidney of the Earth.", "marks": 1 },
-                        { "label": "(d)", "text": "Mention any one way of keeping the excretory system healthy.", "marks": 1 }
+                        { "label": "(a)", "text": "Identify the nitrogenous waste found in human urine.", "marks": 1, "answer": "Urea / Uric acid" },
+                        { "label": "(b)", "text": "State any one function of the kidney in the human body.", "marks": 1, "answer": "Filters blood to remove metabolic wastes and excess water forming urine." },
+                        { "label": "(c)", "text": "Give a reason why wetlands are referred to as the natural kidney of the Earth.", "marks": 1, "answer": "Wetlands trap and filter pollutants and excess nutrients from runoff water." },
+                        { "label": "(d)", "text": "Mention any one way of keeping the excretory system healthy.", "marks": 1, "answer": "Drinking plenty of clean water daily / Avoiding excessive alcohol and salt." }
                     ]
                 },
                 49: {
@@ -299,8 +305,8 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Name the method used to find the volume of an irregular object.", "marks": 1 },
-                        { "label": "(b)", "text": "Find the volume of a stone of density 8 g/cm³ and mass 160 g. (Show your working clearly)", "marks": 3 }
+                        { "label": "(a)", "text": "Name the method used to find the volume of an irregular object.", "marks": 1, "answer": "Displacement method (using measuring cylinder and water)." },
+                        { "label": "(b)", "text": "Find the volume of a stone of density 8 g/cm³ and mass 160 g. (Show your working clearly)", "marks": 3, "answer": "Volume = Mass / Density = 160 g / 8 g/cm³ = 20 cm³" }
                     ]
                 },
                 50: {
@@ -310,9 +316,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Name the type of germination marked R.", "marks": 1 },
-                        { "label": "(b)", "text": "Give a reason why groundnuts are grouped under the germination type marked R.", "marks": 1 },
-                        { "label": "(c)", "text": "Identify any two conditions needed for seed germination to take place.", "marks": 2 }
+                        { "label": "(a)", "text": "Name the type of germination marked R.", "marks": 1, "answer": "Epigeal germination" },
+                        { "label": "(b)", "text": "Give a reason why groundnuts are grouped under the germination type marked R.", "marks": 1, "answer": "Cotyledons are pushed above ground during germination." },
+                        { "label": "(c)", "text": "Identify any two conditions needed for seed germination to take place.", "marks": 2, "answer": "Water (moisture) / Warmth (suitable temperature) / Oxygen (air)." }
                     ]
                 },
                 51: {
@@ -322,9 +328,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Identify the group of worms to which an earthworm belongs.", "marks": 1 },
-                        { "label": "(b)", "text": "Give any one way of controlling tapeworms in humans.", "marks": 1 },
-                        { "label": "(c)", "text": "State any two ways in which earthworms are important in the soil environment.", "marks": 2 }
+                        { "label": "(a)", "text": "Identify the group of worms to which an earthworm belongs.", "marks": 1, "answer": "Annelids (Segmented worms)" },
+                        { "label": "(b)", "text": "Give any one way of controlling tapeworms in humans.", "marks": 1, "answer": "Eating properly cooked meat / Proper disposal of human faeces." },
+                        { "label": "(c)", "text": "State any two ways in which earthworms are important in the soil environment.", "marks": 2, "answer": "Aerates soil by burrowing / Increases soil fertility through worm castings." }
                     ]
                 },
                 52: {
@@ -334,9 +340,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Define what a simple machine is.", "marks": 1 },
-                        { "label": "(b)", "text": "Give any two examples of simple machines used at home.", "marks": 2 },
-                        { "label": "(c)", "text": "State one way friction affects the efficiency of machines.", "marks": 1 }
+                        { "label": "(a)", "text": "Define what a simple machine is.", "marks": 1, "answer": "A tool or device that makes work easier by reducing effort needed." },
+                        { "label": "(b)", "text": "Give any two examples of simple machines used at home.", "marks": 2, "answer": "Wheelbarrow / Scissors / Knife / Pliers / Ramp." },
+                        { "label": "(c)", "text": "State one way friction affects the efficiency of machines.", "marks": 1, "answer": "Friction causes energy loss as heat reducing efficiency." }
                     ]
                 },
                 53: {
@@ -346,9 +352,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Differentiate between a series circuit and a parallel circuit.", "marks": 2 },
-                        { "label": "(b)", "text": "State the function of a switch in an electric circuit.", "marks": 1 },
-                        { "label": "(c)", "text": "Give one safety device used to prevent electric shock in a house.", "marks": 1 }
+                        { "label": "(a)", "text": "Differentiate between a series circuit and a parallel circuit.", "marks": 2, "answer": "In series circuit components are along one path; in parallel circuit components are on separate parallel branches." },
+                        { "label": "(b)", "text": "State the function of a switch in an electric circuit.", "marks": 1, "answer": "Opens or closes electric circuit to control current flow." },
+                        { "label": "(c)", "text": "Give one safety device used to prevent electric shock in a house.", "marks": 1, "answer": "Circuit breaker / Fuse / Earth wire." }
                     ]
                 },
                 54: {
@@ -358,9 +364,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Identify two human activities that negatively affect soil fertility.", "marks": 2 },
-                        { "label": "(b)", "text": "Describe how organic manure improves soil structure.", "marks": 1 },
-                        { "label": "(c)", "text": "State one sustainable farming practice that prevents soil erosion.", "marks": 1 }
+                        { "label": "(a)", "text": "Identify two human activities that negatively affect soil fertility.", "marks": 2, "answer": "Deforestation / Overgrazing / Monoculture / Bush burning." },
+                        { "label": "(b)", "text": "Describe how organic manure improves soil structure.", "marks": 1, "answer": "Binds soil particles together and improves water retention capacity." },
+                        { "label": "(c)", "text": "State one sustainable farming practice that prevents soil erosion.", "marks": 1, "answer": "Terracing / Contour plowing / Cover cropping / Strip cropping." }
                     ]
                 },
                 55: {
@@ -370,9 +376,9 @@ Return JSON:
                     "type": "structured",
                     "marks": 4,
                     "sub_questions": [
-                        { "label": "(a)", "text": "Name the vaccine given at birth to protect against Tuberculosis.", "marks": 1 },
-                        { "label": "(b)", "text": "State the site on the body where Measles vaccine is administered.", "marks": 1 },
-                        { "label": "(c)", "text": "Mention any two childhood killer diseases immunized against using DPT vaccine.", "marks": 2 }
+                        { "label": "(a)", "text": "Name the vaccine given at birth to protect against Tuberculosis.", "marks": 1, "answer": "BCG vaccine" },
+                        { "label": "(b)", "text": "State the site on the body where Measles vaccine is administered.", "marks": 1, "answer": "Left upper arm (subcutaneously)" },
+                        { "label": "(c)", "text": "Mention any two childhood killer diseases immunized against using DPT vaccine.", "marks": 2, "answer": "Diphtheria / Pertussis (Whooping cough) / Tetanus." }
                     ]
                 }
             }
