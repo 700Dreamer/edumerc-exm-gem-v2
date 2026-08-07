@@ -21,15 +21,23 @@ def safe_int(val, default=0):
             return int(nums[0])
     return default
 
-def build_examiners_table_rows(total_q_count):
+def build_examiners_table_rows(total_q_count, sec_a_count=40):
     if not total_q_count or total_q_count <= 0:
         total_q_count = 50
-    step = 10 if total_q_count > 30 else 5
+
     rows = []
-    for start in range(1, total_q_count + 1, step):
-        end = min(start + step - 1, total_q_count)
-        label = f"{start}" if start == end else f"{start}-{end}"
-        rows.append(label)
+    if total_q_count == 55 and sec_a_count == 50:
+        for start in range(1, 51, 10):
+            rows.append(f"{start}-{start+9}")
+        for q in range(51, 56):
+            rows.append(str(q))
+    else:
+        step = 10 if total_q_count > 30 else 5
+        for start in range(1, total_q_count + 1, step):
+            end = min(start + step - 1, total_q_count)
+            label = f"{start}" if start == end else f"{start}-{end}"
+            rows.append(label)
+
     rows.append("TOTAL")
     return "".join([f"<tr><td>{r}</td><td></td><td></td></tr>" for r in rows])
 
@@ -39,14 +47,6 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     """
     
     title_text = f"{exam_type} {term_roman} EXAMINATIONS {exam_year}".upper() if mode == "Exams" else f"{subject} | {topic}".upper()
-    
-    # ── BUILD SCORING TABLE ──
-    exam_rows = build_examiners_table_rows(question_count)
-
-    right_col = f"""<div class="ex-panel">
-        <div style="font-size:11px; font-weight:bold; text-align:center; border:1px solid #000; border-bottom:none; padding:4px;">FOR EXAMINER'S USE ONLY</div>
-        <table><tr><th>Qn No.</th><th>MARKS</th><th>EXR'S NO.</th></tr>{exam_rows}</table>
-    </div>"""
     
     # ── OFFICIAL PAPER STRUCTURE (from UNEB registry) ──
     ps = get_paper_structure(subject, level)
@@ -59,6 +59,14 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     official_duration = ps.get("duration", duration) if duration in ("", "2 HR 30 MIN", None) else duration
     sec_b_note = ps.get("sec_b_note", "Attempt all questions in Section B.")
     has_two_sections = sec_b_count > 0
+
+    # ── BUILD SCORING TABLE ──
+    exam_rows = build_examiners_table_rows(question_count, sec_a_count)
+
+    right_col = f"""<div class="ex-panel">
+        <div style="font-size:11px; font-weight:bold; text-align:center; border:1px solid #000; border-bottom:none; padding:4px;">FOR EXAMINER'S USE ONLY</div>
+        <table><tr><th>Qn No.</th><th>MARKS</th><th>EXR'S NO.</th></tr>{exam_rows}</table>
+    </div>"""
 
     sec_b_line = (
         f"<li>Section B has {sec_b_count} questions ({sec_b_marks} marks). {sec_b_note}</li>"
@@ -433,32 +441,54 @@ body {{
 """
         else:
             document_body = f"""
-<!-- PAGE 1: HEADER -->
-<div class="page" id="mainP">
-  <div class="brand-h">
-    <div class="doc-t" style="margin-bottom:2px; text-align:center;">{title_text}</div>
-    <div class="brand-name" style="text-align:center;">{subject.upper()} FOR {level.upper()}</div>
-    <div style="width:100%; text-align:center; font-weight:bold; font-size:16px; margin-top:10px;">Time allowed: {duration}</div>
+<!-- PAGE 1: HEADER & INSTRUCTIONS -->
+<div class="page tmpl-uneb" id="mainP">
+  <!-- OFFICIAL EXAM HEADER -->
+  <div style="text-align: center; font-family: 'Times New Roman', Times, serif; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 12px;">
+    <div style="font-size: 18px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #000;">EDUQUEST EXAMINATIONS BOARD</div>
+    <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 3px; color: #000;">PRIMARY ASSESSMENT EXAMINATION</div>
+    <div style="font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; color: #000;">{subject.upper()}</div>
+    <div style="font-size: 14px; font-weight: 800; text-transform: uppercase; margin-top: 3px; color: #333;">{level.upper()}</div>
+    <div style="font-size: 13.5px; font-weight: bold; margin-top: 6px; color: #000;">Time allowed: {official_duration}</div>
   </div>
 
-  <div class="cand-box" style="margin: 20px 0; font-family: 'Times New Roman', serif;">
-    <div style="display:flex; align-items:flex-end; margin-bottom:15px; font-size: 16px;">
-        <span>Name:</span> 
-        <div style="flex: 1; border-bottom: 2px dotted #000; margin-left: 10px; height: 18px;"></div>
+  <!-- CANDIDATE IDENTIFICATION BOX -->
+  <div style="border: 1.5px solid #000; padding: 12px 16px; margin-bottom: 20px; font-family: 'Times New Roman', Times, serif; font-size: 13px; background: white;">
+    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+      <span style="font-weight: bold; margin-right: 8px;">Candidate's Name:</span> 
+      <div style="flex: 1; border-bottom: 1.5px dotted #000; height: 16px;"></div>
     </div>
-    <div style="display:flex; gap: 20px; align-items:flex-end; font-size: 16px;">
-        <div style="display:flex; flex: 2; align-items:flex-end;">
-            <span>District:</span> 
-            <div style="flex: 1; border-bottom: 2px dotted #000; margin-left: 10px; height: 18px;"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-weight: bold;">Candidate's Random No.</span> 
+        <div style="display: flex; gap: 2px;">
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
         </div>
-        <div style="display:flex; flex: 1; align-items:flex-end;">
-            <span>Stream:</span> 
-            <div style="flex: 1; border-bottom: 2px dotted #000; margin-left: 10px; height: 18px;"></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-weight: bold;">Personal No.</span> 
+        <div style="display: flex; gap: 2px; align-items: center;">
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <span style="font-weight: bold; margin: 0 1px;">/</span>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
+          <div style="width: 18px; height: 24px; border: 1px solid #000;"></div>
         </div>
+      </div>
     </div>
   </div>
 
-  <div class="col-l" style="margin-top:20px;">{left_col}{right_col}</div>
+  <div class="col-l" style="margin-top:15px;">{left_col}{right_col}</div>
   
   <div class="pgn">Page 1</div>
 </div>
@@ -1101,6 +1131,12 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
         is_math = any(s in subject.lower() for s in ["math", "mathematics", "numeracy"])
         is_secondary = any(x in str(level) for x in ["Senior", "S.1", "S.2", "S.3", "S.4", "S.5", "S.6"])
         
+        ctx_raw = q.get("context_block") or q.get("stimulus_text")
+        if ctx_raw and isinstance(ctx_raw, str):
+            ctx_block = ctx_raw.replace("\\n", "\n")
+        else:
+            ctx_block = ctx_raw
+
         tmpl_name = "marking_guide_question.html" if is_marking_guide else "question.html"
         template = jinja_env.get_template(tmpl_name)
         return template.render(
@@ -1126,6 +1162,7 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
             is_secondary=is_secondary,
             hint=q.get("hint"),
             support=q.get("support"),
+            context_block=ctx_block,
             task_heading=q.get("task_heading"),
             diagram_url=diagram_url,
             answer=ans,

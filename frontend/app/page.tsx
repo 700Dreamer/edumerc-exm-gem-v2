@@ -888,7 +888,7 @@ function AuditLogsView({ theme }: { theme: string }) {
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState<Page>("studio");
-  const [activeTab, setActiveTab] = useState<"gen" | "lib" | "insights" | "chat" | "scenario" | "nursery">("gen");
+  const [activeTab, setActiveTab] = useState<"gen" | "lib" | "insights" | "chat" | "scenario" | "nursery" | "primary_beta">("gen");
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [examData, setExamData] = useState<any>(null);
   const [examImages, setExamImages] = useState<any>({});
@@ -1614,20 +1614,21 @@ function StudioView({
              : "translate-x-0 w-full lg:max-w-7xl mx-auto p-6 lg:p-12 opacity-100")
           : "-translate-x-full lg:translate-x-0 lg:w-0 p-0 lg:opacity-0 lg:border-none"
       )}>
-        <div className="flex gap-1 bg-surface-soft p-1 rounded-xl">
-           {(['gen', 'scenario', 'nursery', 'lib', 'insights', 'chat'] as const)
+        <div className="flex gap-1 bg-surface-soft p-1 rounded-xl overflow-x-auto">
+           {(['gen', 'primary_beta', 'scenario', 'nursery', 'lib', 'insights', 'chat'] as const)
              .map(tab => (
              <button 
                key={tab}
                onClick={() => setActiveTab(tab)}
                className={cn(
-                 "flex-1 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-tighter transition-all",
+                 "flex-1 py-1.5 px-2 rounded-lg font-bold text-[10px] uppercase tracking-tighter transition-all whitespace-nowrap",
                  activeTab === tab ? "bg-surface text-brand-800 shadow-sm" : "text-foreground opacity-40 hover:opacity-100"
                )}
              >
                {tab === 'gen' && 'Primary'}
+               {tab === 'primary_beta' && 'Primary (beta)'}
                {tab === 'scenario' && 'Secondary'}
-               {tab === 'nursery' && '🧸 Pre-Primary'}
+               {tab === 'nursery' && 'Pre-Primary'}
                {tab === 'lib' && 'Library'}
                {tab === 'insights' && 'Insights'}
                {tab === 'chat' && 'Chat'}
@@ -1653,6 +1654,17 @@ function StudioView({
             setIsAnalyzingImageNeeds={setIsAnalyzingImageNeeds}
             setIsRightSidebarOpen={setIsRightSidebarOpen}
             hasPreview={!!previewHtml}
+          />
+        )}
+        {activeTab === 'primary_beta' && (
+          <PrimaryBetaView 
+            setPreviewHtml={setPreviewHtml} 
+            isGenerating={isGenerating} 
+            setIsGenerating={setIsGenerating} 
+            refreshLibrary={refreshLibrary}
+            setLastRaw={setLastRaw}
+            setLastConfig={setLastConfig}
+            lastConfig={lastConfig}
           />
         )}
         {activeTab === 'scenario' && (
@@ -2147,32 +2159,13 @@ function ScenarioView({
               if (event.event_type === "header_ready") {
                 setPreviewHtml(`
                   <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
-                    <div id="step-tracker-banner" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:20px;">
-                      <div style="font-size:11px; font-weight:bold; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Agentic Generation Pipeline Steps</span>
-                        <span id="step-status-tag" style="background:#dbeafe; color:#1d4ed8; padding:2px 8px; border-radius:12px; font-size:10px;">In Progress</span>
-                      </div>
-                      <div style="display:flex; gap:10px; font-size:11px; flex-wrap:wrap;">
-                        <div id="step-pill-1" style="display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:16px; background:#dcfce7; color:#15803d; font-weight:bold;">
-                          <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                          Step 1: Exam Header & Blueprint Initialized
-                        </div>
-                        <div id="step-pill-2" style="display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:16px; background:#eff6ff; color:#1d4ed8; font-weight:bold; border:1px solid #3b82f6;">
-                          <svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                          Step 2: Generating & Injecting Items...
-                        </div>
-                        <div id="step-pill-3" style="display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:16px; background:#f1f5f9; color:#94a3b8;">
-                          Step 3: Paper Complete & Finalized
-                        </div>
-                      </div>
-                    </div>
                     <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px;">
                       <h2 style="margin: 0; font-size: 20px;">${event.title}</h2>
                       <p style="margin: 4px 0 0 0; font-size: 13px; color: #555;">Duration: ${event.duration} | Total Marks: ${event.total_marks}</p>
                     </div>
                     <div id="streaming-items-canvas" style="display: flex; flex-direction: column; gap: 20px;">
                       <div id="item-skeleton" style="padding: 15px; border: 1px dashed #3b82f6; border-radius: 6px; background: #eff6ff; text-align: center; font-size: 13px; color: #1d4ed8; font-weight: bold; animation: pulse 1.5s infinite;">
-                        Agentic Pipeline Step 2: Generating Item 1...
+                        Agentic Engine: Drafting Item 1 with 100% ${subject} domain isolation...
                       </div>
                     </div>
                   </div>
@@ -2180,7 +2173,7 @@ function ScenarioView({
               } else if (event.event_type === "item_generating") {
                 const skel = document.getElementById("item-skeleton");
                 if (skel) {
-                  skel.innerText = `Agentic Pipeline Step 2: Generating Item ${event.item_number}...`;
+                  skel.innerText = `Agentic Engine: Drafting & Validating Item ${event.item_number} with ${subject} blueprint...`;
                 }
               } else if (event.event_type === "item_verified") {
                 itemsContainer.push(event.item_json);
@@ -2199,28 +2192,11 @@ function ScenarioView({
                         <svg style="width:14px; height:14px; stroke:currentColor;" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         Item ${event.item_number} Verified (${subject})
                       </span>
-                      <span style="background:#dcfce7; padding:2px 8px; border-radius:12px;">Step 2 Completed (Injected)</span>
+                      <span style="background:#dcfce7; padding:2px 8px; border-radius:12px;">Programmatic Check Passed</span>
                     </div>
                     ${event.item_html}
                   `;
                   skel.parentNode?.insertBefore(itemDiv, skel);
-                  skel.innerText = `Agentic Pipeline Step 2: Generated Item ${event.item_number} and injected onto canvas...`;
-                }
-              } else if (event.event_type === "diffusion_pass_0") {
-                const tag = document.getElementById("step-status-tag");
-                if (tag) { tag.innerText = `Pass 0: Draft Generated (${event.score}% Score)`; }
-              } else if (event.event_type === "diffusion_pass_1") {
-                const tag = document.getElementById("step-status-tag");
-                if (tag) { tag.innerText = `Pass 1: Math Solved (${event.score}% Score)`; }
-              } else if (event.event_type === "diffusion_pass_2") {
-                const tag = document.getElementById("step-status-tag");
-                if (tag) { tag.innerText = `Pass 2: Style Polished (${event.score}% Score)`; }
-              } else if (event.event_type === "diffusion_pass_3") {
-                const tag = document.getElementById("step-status-tag");
-                if (tag) {
-                  tag.innerText = `Pass 3: ${event.score}% UNEB Certified`;
-                  tag.style.background = "#dcfce7";
-                  tag.style.color = "#15803d";
                 }
               } else if (event.event_type === "paper_complete") {
                 setPreviewHtml(event.html);
@@ -2710,12 +2686,7 @@ function GeneratorControls({
       setQCount(10);
       setDuration("1 HR");
     } else if (isPrimary) {
-      const lvlClean = level.toLowerCase();
-      const isLowerPrimary = ["primary 1", "primary 2", "primary 3", "p.1", "p.2", "p.3", "p1", "p2", "p3"].some(l => lvlClean.includes(l));
-      if (isLowerPrimary) {
-        setQCount(25);
-        setDuration("1 HR 30 MIN");
-      } else if (isMaths) {
+      if (isMaths) {
         setQCount(32);
         setDuration("2 HR 30 MIN");
       } else {
@@ -4988,6 +4959,172 @@ function SyllabusGraphView({ theme }: { theme: string }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function PrimaryBetaView({ setPreviewHtml, isGenerating, setIsGenerating, refreshLibrary, setLastRaw, setLastConfig, lastConfig }: any) {
+  const [config, setConfig] = useState<any>({ levels: [], subjects: [], syllabus: {} });
+  const [level, setLevel] = useState("Primary 7");
+  const [subject, setSubject] = useState("Mathematics");
+
+  useEffect(() => {
+    authFetch(`${API_BASE}/api/syllabus/config?t=${Date.now()}`)
+      .then(res => res.json())
+      .then(data => setConfig(data))
+      .catch(() => {});
+  }, []);
+
+  const primaryLevels = (config.levels || []).filter((l: string) => l.startsWith("Primary") || l.startsWith("P."));
+
+  useEffect(() => {
+    if (primaryLevels.length > 0 && !primaryLevels.includes(level)) {
+      setLevel(primaryLevels.includes("Primary 7") ? "Primary 7" : primaryLevels[0]);
+    }
+  }, [primaryLevels]);
+
+  const REDUNDANT_ALIASES = new Set(["Math", "Science", "SST", "Social Studies", "CRE", "IRE"]);
+
+  const availableSubjects = (config.subjects || []).filter((s: string) => 
+    !REDUNDANT_ALIASES.has(s)
+  );
+
+  useEffect(() => {
+    if (availableSubjects.length > 0 && !availableSubjects.includes(subject)) {
+      setSubject(availableSubjects[0]);
+    }
+  }, [level, availableSubjects]);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    let questionsContainer: any[] = [];
+    try {
+      const response = await authFetch(`${API_BASE}/api/primary-beta-stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          level,
+          subject,
+          brand_name: "EDUMERC"
+        })
+      });
+
+      if (!response.body) {
+        throw new Error("No response body for streaming");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            const jsonStr = trimmed.replace("data: ", "");
+            try {
+              const event = JSON.parse(jsonStr);
+              if (event.event_type === "header_ready") {
+                setPreviewHtml(`
+                  <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px;">
+                      <h2 style="margin: 0; font-size: 20px;">${event.title}</h2>
+                      <p style="margin: 4px 0 0 0; font-size: 13px; color: #555;">Duration: ${event.duration} | Total Marks: ${event.total_marks}</p>
+                    </div>
+                    <div id="streaming-primary-canvas" style="display: flex; flex-direction: column; gap: 15px;">
+                      <div id="primary-status-box" style="padding: 15px; border: 1px dashed #3b82f6; border-radius: 6px; background: #eff6ff; text-align: center; font-size: 13px; color: #1d4ed8; font-weight: bold; animation: pulse 1.5s infinite;">
+                        Primary Beta Engine: Initializing ${subject} (${level}) Paper...
+                      </div>
+                    </div>
+                  </div>
+                `);
+              } else if (event.event_type === "status_update") {
+                const statusBox = document.getElementById("primary-status-box");
+                if (statusBox) {
+                  statusBox.innerText = `Primary Beta Engine: ${event.message}`;
+                }
+              } else if (event.event_type === "question_ready") {
+                questionsContainer.push(event.question_json);
+                const statusBox = document.getElementById("primary-status-box");
+                if (statusBox) {
+                  const qDiv = document.createElement("div");
+                  qDiv.className = "primary-beta-question-box";
+                  qDiv.style.border = "1px solid #e2e8f0";
+                  qDiv.style.borderRadius = "8px";
+                  qDiv.style.padding = "14px";
+                  qDiv.style.marginBottom = "12px";
+                  qDiv.style.backgroundColor = "#ffffff";
+                  qDiv.innerHTML = event.question_html;
+                  statusBox.parentNode?.insertBefore(qDiv, statusBox);
+                }
+              } else if (event.event_type === "paper_complete") {
+                setPreviewHtml(event.html);
+                setLastRaw(event.raw);
+                setLastConfig({ subject, level, term: "Term 1" });
+                refreshLibrary();
+              }
+            } catch (err) {
+              console.error("SSE parse error", err);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Primary Beta generation failed", e);
+      alert("Primary Beta paper generation failed.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-left-4 duration-300">
+      <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 text-xs text-brand-900">
+        <h3 className="font-bold text-sm mb-1">Primary (beta) Engine</h3>
+        <p className="opacity-80">Select a Primary grade level and subject to generate a clean, un-bloated examination paper directly from the beta engine.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="sec-label">Primary Level</label>
+          <select 
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className="w-full bg-surface-soft border border-border-main rounded-xl p-3 text-xs font-bold outline-none appearance-none cursor-pointer"
+          >
+            {primaryLevels.map((l: string) => <option key={l}>{l}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="sec-label">Primary Subject</label>
+          <select 
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full bg-surface-soft border border-border-main rounded-xl p-3 text-xs font-bold outline-none appearance-none cursor-pointer"
+          >
+             {availableSubjects.map((s: string) => <option key={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <button
+        onClick={handleGenerate}
+        disabled={isGenerating}
+        className="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+      >
+        {isGenerating ? (
+          <>Generating Primary (beta) Paper...</>
+        ) : (
+          <>Generate Primary (beta) Paper</>
+        )}
+      </button>
     </div>
   );
 }

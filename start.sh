@@ -15,7 +15,7 @@ if [ -d ".venv" ]; then
 fi
 
 echo "🚀 Starting EduQuest AI Engine (FastAPI)..."
-python3 -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload --reload-dir core --reload-dir ui &
+python3 -m uvicorn server:app --host 0.0.0.0 --port 8000 --reload &
 
 echo "🌐 Starting EduQuest Studio Frontend (Next.js)..."
 cd frontend && npm run dev -- -H 0.0.0.0 -p 3000

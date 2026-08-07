@@ -22,11 +22,11 @@ PAPER_STRUCTURES = {
 
     # ─── PRIMARY LEAVING EXAMINATION (PLE) ───────────────────────────────
     ("Mathematics", "Primary 7"): {
-        "sec_a_count": 20, "sec_a_marks": 40,
-        "sec_b_count": 12, "sec_b_marks": 60,
+        "sec_a_count": 20, "sec_a_marks": 20,
+        "sec_b_count": 5,  "sec_b_marks": 80,
         "total_marks": 100, "duration": "2 HRS 30 MIN",
         "description": "Mathematics Paper 1 (PLE)",
-        "sec_b_note": "Answer all 12 questions in Section B (structured)"
+        "sec_b_note": "Answer all 5 questions in Section B (structured)"
     },
     ("Science", "Primary 7"): {
         "sec_a_count": 40, "sec_a_marks": 40,
@@ -424,19 +424,33 @@ DEFAULT_STRUCTURE = {
 
 def get_paper_structure(subject: str, level: str) -> dict:
     """Returns the official UNEB paper structure for the given subject/level."""
+    s_clean = subject
+    if "english" in str(subject).lower():
+        s_clean = "English"
+    elif "science" in str(subject).lower():
+        s_clean = "Science"
+    elif "social" in str(subject).lower() or "sst" in str(subject).lower():
+        s_clean = "Social Studies"
+    elif "math" in str(subject).lower():
+        s_clean = "Mathematics"
+
     # Intercept ECD levels regardless of subject to enforce single-section ECD format
     if level in ["Baby Class", "Middle Class", "Top Class"]:
         return PAPER_STRUCTURES.get(("ECD", level))
-
-    # Intercept Primary levels (Primary 1 to Primary 7) and delegate to dedicated Primary Engine
-    if any(p in str(level).lower() for p in ["primary", "p.1", "p.2", "p.3", "p.4", "p.5", "p.6", "p.7", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "ple"]):
-        from core.primary_engine import get_primary_paper_structure
-        return get_primary_paper_structure(subject, level)
-
-    structure = PAPER_STRUCTURES.get((subject, level))
+        
+    structure = PAPER_STRUCTURES.get((s_clean, level)) or PAPER_STRUCTURES.get((subject, level))
     if structure:
         return structure
-
+        
+    # Provide a sane fallback for Lower Primary (P1-P3) to avoid huge 55-question exams
+    if level in ["Primary 1", "Primary 2", "Primary 3"]:
+        return {
+            "sec_a_count": 20, "sec_a_marks": 20,
+            "sec_b_count": 5,  "sec_b_marks": 30,
+            "total_marks": 50,  "duration": "1 HR 30 MIN",
+            "description": f"{subject} Lower Primary Assessment"
+        }
+        
     # Provide sane structure for Lower Secondary (Senior 1-4 Competency Assessments)
     if any(s in str(level) for s in ["Senior 1", "Senior 2", "Senior 3", "Senior 4", "S.1", "S.2", "S.3", "S.4"]):
         return {
