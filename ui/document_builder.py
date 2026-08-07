@@ -417,7 +417,6 @@ body {{
   <div class="body-c" id="content-body" style="margin-top:20px;">
     {parsed_html}
   </div>
-  <div class="pgn">EduQuest Core | {document_title} Module</div>
 </div>
 """
     else:
@@ -513,8 +512,6 @@ body {{
   </div>
 
   <div class="col-l" style="margin-top:15px;">{left_col}{right_col}</div>
-  
-  <div class="pgn">Page 1</div>
 </div>
 
 <!-- REFERENCE MAP PAGE (NEW) -->
@@ -526,7 +523,6 @@ body {{
     </div> 
   </div>
   {syllabus_table}
-  <div class="pgn">Reference Map — Neural Audit</div>
 </div>
 
 <!-- PAGE 2: CONTENT -->
@@ -540,7 +536,6 @@ body {{
   <div class="body-c" id="content-body">
     {parsed_html}
   </div>
-  <div class="pgn">Page 2 of 2 — End of Release</div>
 </div>
 
 <!-- PAGE 3: MARKING GUIDE (TEACHER ONLY) -->
@@ -564,8 +559,6 @@ body {{
   <div class="body-c" id="marking-content-body">
     {marking_guide_parsed_html}
   </div>
-  
-  <div class="pgn">Page 3 of 3 — Secure Marking Key</div>
 </div>
 """
 
