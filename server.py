@@ -25,6 +25,7 @@ from pydantic import BaseModel
 from core.ai_engine import generate_ai_content, analyze_pedagogy, chat_response, get_openai_client, generate_scenario_content, generate_illustration, stream_generate_ai_content, analyze_image_needs, generate_nursery_exam, generate_diagrams_for_questions
 from core.secondary_agentic_pipeline import stream_secondary_paper_agentic, regenerate_single_secondary_item
 from core.primary_beta_engine import stream_primary_beta_paper
+from core.primary_engines.router import PrimaryEngineRouter
 from core.db_engine import save_project, load_projects, init_db
 from core.pdf_engine import save_pdf_background
 from ui.document_builder import build_full_html
@@ -169,7 +170,7 @@ class PrimaryBetaRequest(BaseModel):
 @app.post("/api/primary-beta-stream")
 async def primary_beta_stream_endpoint(req: PrimaryBetaRequest):
     return StreamingResponse(
-        stream_primary_beta_paper(
+        PrimaryEngineRouter.stream_paper(
             subject=req.subject,
             level=req.level,
             brand_name=req.brand_name or "EDUMERC"
