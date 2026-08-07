@@ -311,11 +311,8 @@ Return JSON:
                         norm_lines.append(f"{label} {clean_sent}")
                     ctx_normalized = "\n".join(norm_lines)
                     q["context_block"] = ctx_normalized + "\n" + solution_table_html
-                    # 10 clean empty response lines (a) to (j)
-                    q["sub_questions"] = [
-                        {"label": f"({chr(97+i)})", "text": "", "marks": 1}
-                        for i in range(10)
-                    ]
+                    # Rely solely on the Solution Table box for filling in the answer order
+                    q["sub_questions"] = []
                 
                 # Special Formatting for Q55 (Dialogue Script)
                 elif q_num == 55:
@@ -395,7 +392,7 @@ Ukasha: ___________________________________________________"""
                     "context_block": "(a) They arrived at the park.\n(b) Pupils prepared for a tour.\n(c) They ate lunch.\n(d) They boarded the bus.\n(e) The driver drove off.\n(f) Everyone was excited.\n(g) They saw wild animals.\n(h) They returned home.\n(i) They reached safely.\n(j) It was a great day." + sol_table,
                     "type": "structured",
                     "marks": 10,
-                    "sub_questions": [{"label": f"({chr(97+i)})", "text": "", "marks": 1} for i in range(10)]
+                    "sub_questions": []
                 }
             elif q_num == 55:
                 return {
