@@ -143,7 +143,7 @@ interface Project {
 
 // ── COMPONENTS ──
 
-const Header = ({ theme, setTheme, currentPage, setCurrentPage, isLeftSidebarOpen, setIsLeftSidebarOpen, isRightSidebarOpen, setIsRightSidebarOpen, parsedQuestionsLength, zoom, setZoom, viewMode, setViewMode, iframeRef, user, onLogout }: any) => {
+const Header = ({ theme, setTheme, currentPage, setCurrentPage, isLeftSidebarOpen, setIsLeftSidebarOpen, isRightSidebarOpen, setIsRightSidebarOpen, parsedQuestionsLength, zoom, setZoom, viewMode, setViewMode, iframeRef, user, onLogout, isGenerating }: any) => {
   const isAdmin = user?.role === "admin";
   const isStaff = user?.role === "staff";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -1276,7 +1276,7 @@ export default function Home() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col transition-colors duration-500">
-      <Header theme={theme} setTheme={setTheme} currentPage={currentPage} setCurrentPage={setCurrentPage} isLeftSidebarOpen={isLeftSidebarOpen} setIsLeftSidebarOpen={setIsLeftSidebarOpen} isRightSidebarOpen={isRightSidebarOpen} setIsRightSidebarOpen={setIsRightSidebarOpen} parsedQuestionsLength={parsedQuestionsLength} zoom={zoom} setZoom={setZoom} viewMode={viewMode} setViewMode={setViewMode} iframeRef={iframeRef} user={user} onLogout={handleLogout} />
+      <Header theme={theme} setTheme={setTheme} currentPage={currentPage} setCurrentPage={setCurrentPage} isLeftSidebarOpen={isLeftSidebarOpen} setIsLeftSidebarOpen={setIsLeftSidebarOpen} isRightSidebarOpen={isRightSidebarOpen} setIsRightSidebarOpen={setIsRightSidebarOpen} parsedQuestionsLength={parsedQuestionsLength} zoom={zoom} setZoom={setZoom} viewMode={viewMode} setViewMode={setViewMode} iframeRef={iframeRef} user={user} onLogout={handleLogout} isGenerating={isGenerating} />
 
 
       {/* ── CONTENT AREA ── */}
