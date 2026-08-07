@@ -235,8 +235,13 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     elif any(x in level for x in ["Nursery", "ECD", "Baby", "Middle", "Top"]):
         is_lower_primary = True
         
-    font_css = '"Comic Sans MS", "Chalkboard SE", "Comic Neue", sans-serif' if is_lower_primary else '"Times New Roman", Times, serif'
-    line_height = '1.9' if is_lower_primary else '1.5'
+    if "ENGLISH" in subject.upper() or "ENGLISH" in level.upper():
+        font_css = 'Arial, Helvetica, sans-serif'
+    elif is_lower_primary:
+        font_css = '"Comic Sans MS", "Chalkboard SE", "Comic Neue", sans-serif'
+    else:
+        font_css = '"Times New Roman", Times, serif'
+    line_height = '1.8' if "ENGLISH" in subject.upper() else ('1.9' if is_lower_primary else '1.5')
 
     template = f"""<!DOCTYPE html>
 <html>
@@ -995,8 +1000,13 @@ def build_header_html(mode, exam_type, level, subject, term_roman, exam_year, du
     elif any(x in level for x in ["Nursery", "ECD", "Baby", "Middle", "Top"]):
         is_lower_primary = True
         
-    font_css = '"Comic Sans MS", "Chalkboard SE", "Comic Neue", sans-serif' if is_lower_primary else '"Times New Roman", Times, serif'
-    line_height = '1.9' if is_lower_primary else '1.5'
+    if "ENGLISH" in subject.upper() or "ENGLISH" in level.upper():
+        font_css = 'Arial, Helvetica, sans-serif'
+    elif is_lower_primary:
+        font_css = '"Comic Sans MS", "Chalkboard SE", "Comic Neue", sans-serif'
+    else:
+        font_css = '"Times New Roman", Times, serif'
+    line_height = '1.8' if "ENGLISH" in subject.upper() else ('1.9' if is_lower_primary else '1.5')
 
     header_html = f"""<!DOCTYPE html>
 <html>
