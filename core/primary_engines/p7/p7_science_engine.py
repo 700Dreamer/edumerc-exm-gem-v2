@@ -45,32 +45,32 @@ Return JSON:
     @staticmethod
     def synthesize_sec_b_prompt(q_num: int) -> str:
         topics = {
-            41: "Crop Husbandry (Cassava, Yams, Tuber crops care and processing)",
-            42: "Human Organ System (Eye / Ear anatomy, functions and care)",
-            43: "Poultry Keeping (Systems of poultry, perches, vices, disease control)",
-            44: "Energy Resources (Energy sources completion table: Biomass, Solar, Wind, Uranium)",
-            45: "Personal Hygiene (Teeth care steps: Toothpaste, toothbrush, water)",
-            46: "Properties of Matter & Heat Transfer (States of matter, Conduction, Convection, Radiation)",
-            47: "Water Cycle (Diagram of evaporation, condensation, precipitation, transpiration)",
-            48: "Excretory System (Kidneys, nitrogenous wastes in urine, wetland conservation)",
-            49: "Density & Volume Calculations (Calculation of volume = mass/density with working steps)",
-            50: "Seed Germination (Comparison table of Epigeal vs Hypogeal germination in maize/beans)",
-            51: "Worm Classification (Flatworms, Roundworms, Annelids, environmental importance)",
-            52: "Simple Machines (Levers, Pulleys, Mechanical Advantage applications)",
-            53: "Electricity & Magnetism (Series vs Parallel circuits, switches, magnetic properties)",
-            54: "Soil Erosion & Fertility (Human impacts, fertilizers, sustainable soil management)",
-            55: "Immunization & Vaccination (Vaccination schedule table: Tetanus, BCG, DPT, Measles)"
+            41: ("The list below shows cassava, sweet potatoes, and coco yams.", "Crop Husbandry (Cassava, Yams, Tuber crops care and processing)"),
+            42: ("The diagram below shows the human eye. Study and use it to answer the questions that follow.", "Human Organ System (Eye / Ear anatomy, functions and care)"),
+            43: ("Poultry farming is an important agricultural activity in Uganda.", "Poultry Keeping (Systems of poultry, perches, vices, disease control)"),
+            44: ("The table below shows energy resources and their primary sources. Complete the table correctly.", "Energy Resources (Energy sources completion table: Biomass, Solar, Wind, Uranium)"),
+            45: ("You are provided with toothpaste, clean water, and a toothbrush. Describe four steps you would follow to clean your teeth correctly.", "Personal Hygiene (Teeth care steps: Toothpaste, toothbrush, water)"),
+            46: ("Matter exists in three main states: solids, liquids, and gases.", "Properties of Matter & Heat Transfer (States of matter, Conduction, Convection, Radiation)"),
+            47: ("The diagram below shows a water cycle. Study and use it to answer the questions that follow.", "Water Cycle (Diagram of evaporation, condensation, precipitation, transpiration)"),
+            48: ("The excretory system removes metabolic waste products from the body.", "Excretory System (Kidneys, nitrogenous wastes in urine, wetland conservation)"),
+            49: ("Answer the calculation questions below about volume and density.", "Density & Volume Calculations (Calculation of volume = mass/density with working steps)"),
+            50: ("The table below shows different types of seed germination. Study it carefully and answer the questions that follow.", "Seed Germination (Comparison table of Epigeal vs Hypogeal germination in maize/beans)"),
+            51: ("Worms are classified into different groups according to their body structure.", "Worm Classification (Flatworms, Roundworms, Annelids, environmental importance)"),
+            52: ("Simple machines help to make work easier by reducing the effort needed.", "Simple Machines (Levers, Pulleys, Mechanical Advantage applications)"),
+            53: ("Electric circuits are used to power electrical appliances safely.", "Electricity & Magnetism (Series vs Parallel circuits, switches, magnetic properties)"),
+            54: ("Soil fertility is essential for good crop yield in farming.", "Soil Erosion & Fertility (Human impacts, fertilizers, sustainable soil management)"),
+            55: ("Immunization protects infants and children against dangerous childhood killer diseases.", "Immunization & Vaccination (Vaccination schedule table: Tetanus, BCG, DPT, Measles)")
         }
-        topic_desc = topics.get(q_num, "Integrated Science Strand")
+        statement, topic_desc = topics.get(q_num, ("Study the topic below and answer the questions that follow.", "Integrated Science Strand"))
         return f"""
 ### UGANDA P.7 INTEGRATED SCIENCE GENERATOR (SECTION B: Q{q_num})
 TOPIC STRAND: {topic_desc}
 REQUIREMENT: Exactly 4 MARKS TOTAL for Q{q_num}.
 
 Generate Question {q_num} for Section B:
-- "text": "Clear stem prompt about {topic_desc}."
+- "text": MUST be the introductory context statement: "{statement}"
 - "type": "structured", "marks": 4
-- "sub_questions": Exactly 3 to 4 sub-questions (a), (b), (c), (d) totaling exactly 4 marks.
+- "sub_questions": Exactly 3 to 4 sub-questions (a), (b), (c), (d) containing the actual questions and totaling exactly 4 marks.
 - Include HTML tables or SVG diagrams in "context_block" where applicable.
 
 Return JSON:
@@ -78,7 +78,7 @@ Return JSON:
   "questions": [
     {{
       "number": {q_num},
-      "text": "Study the question below carefully and then answer the sub-questions that follow.",
+      "text": "{statement}",
       "context_block": "",
       "type": "structured",
       "marks": 4,
