@@ -362,7 +362,11 @@ Return JSON:
   </table>
 </div>
 """
-                    ctx_text = q.get("context_block", "").replace("\\n", "\n")
+                    raw_ctx = q.get("context_block", "")
+                    if isinstance(raw_ctx, list):
+                        ctx_text = "\n".join(str(l) for l in raw_ctx)
+                    else:
+                        ctx_text = str(raw_ctx).replace("\\n", "\n")
                     raw_sents = [l.strip() for l in ctx_text.split("\n") if l.strip() and not "Solution Table" in l and not "<table>" in l]
                     norm_lines = []
                     for idx, line in enumerate(raw_sents[:10]):
@@ -379,14 +383,28 @@ Return JSON:
                     q["sub_questions"] = [] # Relies on general essay writing lines below
 
                 elif q.get("context_block"):
-                    q["context_block"] = q["context_block"].replace("\\n", "\n")
+                    ctx = q["context_block"]
+                    if isinstance(ctx, list):
+                        q["context_block"] = "\n".join(str(l) for l in ctx)
+                    else:
+                        q["context_block"] = str(ctx).replace("\\n", "\n")
 
                 return q
             raise ValueError(f"No item generated for Q{q_num}")
         except Exception as e:
             print(f"P7 English Sec B Item Error (Q{q_num}): {e}")
             if q_num == 51:
-                fallback_story = """Once upon a time in Kasese district, Mr. Mukasa owned a large banana farm. The farm was known for producing the sweetest bananas in the region. People from nearby villages often visited to buy fresh bananas directly from Mr. Mukasa. One day, a strong storm hit Kasese, causing significant damage to the farm. Many banana trees were uprooted, and Mr. Mukasa was deeply worried about his livelihood. Fortunately, the villagers came together to help him. They worked tirelessly for days to clear the debris and replant new banana trees. Their hard work and unity paid off, as the farm soon began to thrive once again. Mr. Mukasa was grateful and decided to organize a feast to thank the villagers for their support. From that day on, the farm not only became a source of income but also a symbol of community strength and resilience."""
+                fallback_story = (
+                    "Once upon a time in Kasese district, Mr. Mukasa owned a large banana farm. "
+                    "The farm was known for producing the sweetest bananas in the region. "
+                    "People from nearby villages often visited to buy fresh bananas directly from Mr. Mukasa. "
+                    "One day, a strong storm hit Kasese, causing significant damage to the farm. "
+                    "Many banana trees were uprooted, and Mr. Mukasa was deeply worried about his livelihood. "
+                    "Fortunately, the villagers came together to help him. They worked tirelessly for days to clear the debris and replant new banana trees. "
+                    "Their hard work and unity paid off, as the farm soon began to thrive once again. "
+                    "Mr. Mukasa was grateful and decided to organize a feast to thank the villagers for their support. "
+                    "From that day on, the farm not only became a source of income but also a symbol of community strength and resilience."
+                )
                 return {
                     "number": 51,
                     "text": "Read the passage below carefully and then answer in full sentences the questions that follow.",
@@ -407,7 +425,21 @@ Return JSON:
                     ]
                 }
             elif q_num == 52:
-                fallback_poem = """A DREAM OF BEING A SPORTS CELEBRITY\n\nI must be a football champion,\nJust like Christiano Ronaldo the captain,\nWhose first goal helped Portugal,\nTo qualify for the 2004 World Cup.\n\nGrowing as an orphan is never a limit,\nI will make it just like Lionel Messi did,\nThe top scorer in the premier league ever,\nWho is paid highly and famous everywhere.\n\nI must be a real champion,\nDreaming to be the captain of Uganda Cranes,\nJust like Mbappe and his country France,\nThe best football dribbler in the world."""
+                fallback_poem = (
+                    "A DREAM OF BEING A SPORTS CELEBRITY\n\n"
+                    "I must be a football champion,\n"
+                    "Just like Christiano Ronaldo the captain,\n"
+                    "Whose first goal helped Portugal,\n"
+                    "To qualify for the 2004 World Cup.\n\n"
+                    "Growing as an orphan is never a limit,\n"
+                    "I will make it just like Lionel Messi did,\n"
+                    "The top scorer in the premier league ever,\n"
+                    "Who is paid highly and famous everywhere.\n\n"
+                    "I must be a real champion,\n"
+                    "Dreaming to be the captain of Uganda Cranes,\n"
+                    "Just like Mbappe and his country France,\n"
+                    "The best football dribbler in the world."
+                )
                 return {
                     "number": 52,
                     "text": "Read the poem below carefully and then answer in full sentences the questions that follow.",
@@ -428,20 +460,23 @@ Return JSON:
                     ]
                 }
             elif q_num == 53:
+                table_html = (
+                    "<table border='1' style='border-collapse:collapse; width:100%; text-align:center; font-size:13px; border:1px solid #000;'>"
+                    "<tr style='background:#f1f5f9;'><th>No.</th><th>Name</th><th>Sex</th><th>Age</th><th>Sickness</th><th>Treatment Given</th></tr>"
+                    "<tr><td>1</td><td>Magunda Peter</td><td>M</td><td>50</td><td>Malaria</td><td>Given tablets</td></tr>"
+                    "<tr><td>2</td><td>Obisa Vincent</td><td>M</td><td>15</td><td>Cholera</td><td>Admitted for one week</td></tr>"
+                    "<tr><td>3</td><td>Achieng Matilda</td><td>F</td><td>85</td><td>Cough</td><td>Given tablets</td></tr>"
+                    "<tr><td>4</td><td>Drako Silver</td><td>M</td><td>2</td><td>Diarrhoea</td><td>Given oral rehydration</td></tr>"
+                    "<tr><td>5</td><td>Musoke Usaini</td><td>M</td><td>6</td><td>Malaria</td><td>Injections for 2 days</td></tr>"
+                    "<tr><td>6</td><td>Akware Margaret</td><td>F</td><td>30</td><td>Malaria</td><td>Injections for 2 days</td></tr>"
+                    "<tr><td>7</td><td>Tusiime Alawi</td><td>M</td><td>4</td><td>Measles</td><td>Injections for 2 days</td></tr>"
+                    "<tr><td>8</td><td>Nyayuk Mary</td><td>F</td><td>36</td><td>Diarrhoea</td><td>Given oral rehydration</td></tr>"
+                    "</table>"
+                )
                 return {
                     "number": 53,
                     "text": "Study the extract from Mukumer Health Centre III records below carefully and then answer in full sentences the questions that follow.",
-                    "context_block": """<table border='1' style='border-collapse:collapse; width:100%; text-align:center; font-size:13px; border:1px solid #000;'>
-<tr style='background:#f1f5f9;'><th>No.</th><th>Name</th><th>Sex</th><th>Age</th><th>Sickness</th><th>Treatment Given</th></tr>
-<tr><td>1</td><td>Magunda Peter</td><td>M</td><td>50</td><td>Malaria</td><td>Given tablets</td></tr>
-<tr><td>2</td><td>Obisa Vincent</td><td>M</td><td>15</td><td>Cholera</td><td>Admitted for one week</td></tr>
-<tr><td>3</td><td>Achieng Matilda</td><td>F</td><td>85</td><td>Cough</td><td>Given tablets</td></tr>
-<tr><td>4</td><td>Drako Silver</td><td>M</td><td>2</td><td>Diarrhoea</td><td>Given oral rehydration</td></tr>
-<tr><td>5</td><td>Musoke Usaini</td><td>M</td><td>6</td><td>Malaria</td><td>Injections for 2 days</td></tr>
-<tr><td>6</td><td>Akware Margaret</td><td>F</td><td>30</td><td>Malaria</td><td>Injections for 2 days</td></tr>
-<tr><td>7</td><td>Tusiime Alawi</td><td>M</td><td>4</td><td>Measles</td><td>Injections for 2 days</td></tr>
-<tr><td>8</td><td>Nyayuk Mary</td><td>F</td><td>36</td><td>Diarrhoea</td><td>Given oral rehydration</td></tr>
-</table>""",
+                    "context_block": table_html,
                     "type": "structured",
                     "marks": 10,
                     "sub_questions": [
@@ -458,19 +493,19 @@ Return JSON:
                     ]
                 }
             elif q_num == 54:
-                sol_table = """
-<div style="margin-top:14px; margin-bottom:14px;">
-  <div style="font-weight:bold; font-size:13.5px; margin-bottom:5px;">Solution Table</div>
-  <table border="1" style="border-collapse:collapse; width:100%; text-align:center; font-size:13px; border:1px solid #000;">
-    <tr style="background:#f1f5f9;"><td style="font-weight:bold; width:120px; padding:4px;">Wrong order</td><td>(a)</td><td>(b)</td><td>(c)</td><td>(d)</td><td>(e)</td><td>(f)</td><td>(g)</td><td>(h)</td><td>(i)</td><td>(j)</td></tr>
-    <tr><td style="font-weight:bold; padding:8px;">Correct order</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-  </table>
-</div>
-"""
+                sol_table = (
+                    '<div style="margin-top:14px; margin-bottom:14px;">'
+                    '<div style="font-weight:bold; font-size:13.5px; margin-bottom:5px;">Solution Table</div>'
+                    '<table border="1" style="border-collapse:collapse; width:100%; text-align:center; font-size:13px; border:1px solid #000;">'
+                    '<tr style="background:#f1f5f9;"><td style="font-weight:bold; width:120px; padding:4px;">Wrong order</td><td>(a)</td><td>(b)</td><td>(c)</td><td>(d)</td><td>(e)</td><td>(f)</td><td>(g)</td><td>(h)</td><td>(i)</td><td>(j)</td></tr>'
+                    '<tr><td style="font-weight:bold; padding:8px;">Correct order</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>'
+                    '</table>'
+                    '</div>'
+                )
                 return {
                     "number": 54,
                     "text": "The sentences below are in a wrong order. Re-arrange them in the correct order so as to make a good composition about a school trip.",
-                    "context_block": "(a) They arrived at the park.\n(b) Pupils prepared for a tour.\n(c) They ate lunch.\n(d) They boarded the bus.\n(e) The driver drove off.\n(f) Everyone was excited.\n(g) They saw wild animals.\n(h) They returned home.\n(i) They reached safely.\n(j) It was a great day." + sol_table,
+                    "context_block": "(a) They arrived at the park.\n(b) Pupils prepared for a tour.\n(c) They ate lunch.\n(d) They boarded the bus.\n(e) The driver drove off.\n(f) Everyone was excited.\n(g) They saw wild animals.\n(h) They returned home.\n(i) They reached safely.\n(j) It was a great day.\n" + sol_table,
                     "type": "structured",
                     "marks": 10,
                     "sub_questions": []
