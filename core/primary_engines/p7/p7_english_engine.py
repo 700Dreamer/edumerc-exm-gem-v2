@@ -253,8 +253,9 @@ Return JSON:
                 q["number"] = qnum
                 q["type"] = "short_answer"
                 q["marks"] = 1
-                q["options"] = []
-                q["instruction_group"] = P7EnglishEngine.get_subgroup_instruction(qnum)
+                if 27 <= qnum <= 28 and "/" not in q.get("text", ""):
+                    words = [w.strip() for w in q.get("text", "").replace(".", "").split() if w.strip()]
+                    q["text"] = " / ".join(words)
             return qs[:count]
         except Exception as e:
             print(f"P7 English Sec A Chunk Error (Q{start_num}): {e}")
@@ -317,16 +318,17 @@ Return JSON:
                 # Special Formatting for Q55 (Dialogue Script)
                 elif q_num == 55:
                     raw_ctx = q.get("context_block", "").replace("\\n", "\n")
-                    lines = raw_ctx.split("\n")
-                    has_ukasha = any(l.strip().startswith("Ukasha:") for l in lines)
-                    if has_ukasha:
+                    lines = [l.strip() for l in raw_ctx.split("\n") if l.strip()]
+                    enock_prompts = [l for l in lines if l.startswith("Enock:") or l.startswith("Speaker 1:")]
+                    if len(enock_prompts) >= 5:
                         cleaned_lines = []
-                        for line in lines:
-                            if line.strip().startswith("Ukasha:"):
-                                cleaned_lines.append("Ukasha: ___________________________________________________")
-                                cleaned_lines.append("        ___________________________________________________")
-                            else:
-                                cleaned_lines.append(line)
+                        for prompt_line in enock_prompts:
+                            if prompt_line.startswith("Speaker 1:"):
+                                prompt_line = "Enock:" + prompt_line[len("Speaker 1:"): ]
+                            cleaned_lines.append(prompt_line)
+                            cleaned_lines.append("Ukasha: ___________________________________________________")
+                            cleaned_lines.append("        ___________________________________________________")
+                            cleaned_lines.append("")
                         q["context_block"] = "\n".join(cleaned_lines)
                     else:
                         q["context_block"] = """Enock: Hello Ukasha, what have you been doing in your class?
