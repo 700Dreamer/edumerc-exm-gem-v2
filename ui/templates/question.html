@@ -1,11 +1,11 @@
-<div class="q-wrap" data-qtext="{{ safe_text }}" data-subject="{{ subject }}" data-level="{{ level }}" style="margin-bottom:28px; clear:both; position:relative; line-height:1.6; white-space:normal;">
-  <div style="font-size:16px; margin-bottom:8px;">
+<div class="q-wrap" data-qtext="{{ safe_text }}" data-subject="{{ subject }}" data-level="{{ level }}" style="margin-bottom:24px; clear:both; position:relative; line-height:1.7; white-space:normal;">
+  <div style="font-size:16px; margin-bottom:8px; display:flex; align-items:flex-start; line-height:1.7;">
     {% if is_secondary %}
-      <b style="font-size:16px; font-weight:900;">Item {{ num }}.</b>
+      <b style="font-size:16px; font-weight:900; min-width:32px;">Item {{ num }}.</b>
     {% else %}
-      <span style="font-weight:bold; margin-right:5px; flex-shrink:0;">{{ num }}.</span>
+      <span style="font-weight:bold; min-width:28px; flex-shrink:0;">{{ num }}.</span>
     {% endif %}
-    <span style="line-height:1.6;">{{ text }}</span>
+    <span style="flex:1; line-height:1.7;">{{ text | safe }}</span>
     {% if q_type == 'mcq' %}
     <div style="border: 2px solid #000; width: 32px; height: 32px; margin-left: 12px; flex-shrink: 0; display:inline-block; vertical-align:middle;"></div>
     {% endif %}

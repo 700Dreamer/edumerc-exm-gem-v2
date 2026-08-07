@@ -146,6 +146,17 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
             sec_b_qs = [q for q in questions if safe_int(q.get("number", 0)) > sec_a_count]
 
             if sec_a_qs:
+                if "ENGLISH" in subject.upper() or "PRIMARY" in level.upper():
+                    sec_a_hdr = (
+                        "<div style='text-align:center; margin-top:20px; margin-bottom:25px;'>"
+                        "<div style='font-weight:900; font-size:18px; text-transform:uppercase; margin-bottom:4px;'>SECTION A: 50 MARKS</div>"
+                        "<div style='font-weight:bold; font-size:16px; margin-bottom:6px;'>Sub - Section I</div>"
+                        "<div style='font-size:15px;'>Questions <b>1</b> to <b>50</b> carry one mark each.</div>"
+                        "</div>"
+                    )
+                    parsed_html += sec_a_hdr
+                    marking_guide_parsed_html += sec_a_hdr
+
                 current_instruction = None
                 for q in sec_a_qs:
                     instr = q.get("instruction_group")
@@ -160,7 +171,15 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
 
             # Section B — always full width, compact override
             if sec_b_qs:
-                sec_b_header = f"<div style='text-align:center; margin-top:30px; border-bottom: 2px solid #000; padding-bottom:5px; margin-bottom:20px;'><b style='text-decoration:underline; font-size:14px;'>SECTION B ({sec_b_marks} Marks)</b></div>"
+                if "ENGLISH" in subject.upper() or "PRIMARY" in level.upper():
+                    sec_b_header = (
+                        "<div style='text-align:center; margin-top:30px; margin-bottom:20px;'>"
+                        "<div style='font-weight:900; font-size:18px; text-transform:uppercase; margin-bottom:4px;'>SECTION B: 50 MARKS</div>"
+                        "<div style='font-size:15px;'>Questions <b>51</b> to <b>55</b> carry ten marks each.</div>"
+                        "</div>"
+                    )
+                else:
+                    sec_b_header = f"<div style='text-align:center; margin-top:30px; border-bottom: 2px solid #000; padding-bottom:5px; margin-bottom:20px;'><b style='text-decoration:underline; font-size:14px;'>SECTION B ({sec_b_marks} Marks)</b></div>"
                 parsed_html += sec_b_header
                 marking_guide_parsed_html += sec_b_header
                 
