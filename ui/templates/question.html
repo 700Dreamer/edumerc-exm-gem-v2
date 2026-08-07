@@ -105,7 +105,7 @@
     <div style="display: flex; margin-bottom: 5px;">
       <span>{{ sub.label }} &nbsp;</span>
       <span style="flex:1;">{{ sub.text }}</span>
-      <span style="font-weight:bold;">({{ sub.marks }} mark{% if sub.marks > 1 %}s{% endif %})</span>
+      {% if sub.text %}<span style="font-weight:bold;">({{ sub.marks }} mark{% if sub.marks > 1 %}s{% endif %})</span>{% endif %}
     </div>
     {% if not is_secondary %}
       {% if sub.marks > 1 %}

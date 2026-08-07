@@ -300,8 +300,17 @@ Return JSON:
   </table>
 </div>
 """
+                    import re
                     ctx_text = q.get("context_block", "").replace("\\n", "\n")
-                    q["context_block"] = ctx_text + "\n" + solution_table_html
+                    raw_sents = [l.strip() for l in ctx_text.split("\n") if l.strip() and not "Solution Table" in l and not "<table>" in l]
+                    norm_lines = []
+                    for idx, line in enumerate(raw_sents[:10]):
+                        clean_sent = re.sub(r'^\([a-jA-J]\)\s*', '', line)
+                        clean_sent = re.sub(r'^[a-jA-J][\.\)]\s*', '', clean_sent)
+                        label = f"({chr(97+idx)})"
+                        norm_lines.append(f"{label} {clean_sent}")
+                    ctx_normalized = "\n".join(norm_lines)
+                    q["context_block"] = ctx_normalized + "\n" + solution_table_html
                     # 10 clean empty response lines (a) to (j)
                     q["sub_questions"] = [
                         {"label": f"({chr(97+i)})", "text": "", "marks": 1}
