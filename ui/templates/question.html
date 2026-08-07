@@ -136,10 +136,10 @@
 
   <!-- ── GENERAL SHORT ANSWER RESPONSE LINES ── -->
   {% if not is_drawing_question %}
-    {% if not (q_type == 'structured' and sub_questions) and q_type not in ['vertical_math', 'matching', 'fill_blank'] and q_type != 'mcq' and '________' not in text and num != 54 and num != '54' and num != 55 and num != '55' and 'Solution Table' not in (context_block or '') %}
+    {% if not (q_type == 'structured' and sub_questions) and q_type not in ['vertical_math', 'matching', 'fill_blank'] and q_type != 'mcq' and '________' not in text and num != 54 and num != '54' and 'Solution Table' not in (context_block or '') %}
         {% if marks >= 5 %}
             <div class="ans-lines">
-                {% for m in range(12) %}
+                {% for m in range(16) %}
                 <div class="ans-line" style="width:100%;"></div>
                 {% endfor %}
             </div>
