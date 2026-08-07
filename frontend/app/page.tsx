@@ -288,7 +288,9 @@ const Header = ({ theme, setTheme, currentPage, setCurrentPage, isLeftSidebarOpe
 
              <div className="flex bg-surface p-1 rounded-xl gap-1 mr-1.5 shadow-sm border border-border-main">
                 <button onClick={() => setViewMode("student")} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all", viewMode === "student" ? "bg-surface-soft text-brand-800 shadow-sm" : "text-foreground opacity-40 hover:opacity-100")}><Eye className="w-3 h-3" /> Question Paper</button>
-                <button onClick={() => setViewMode("marking")} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all", viewMode === "marking" ? "bg-brand-800 text-white shadow-lg neon-glow" : "text-foreground opacity-40 hover:opacity-100")}><FileCheck className="w-3 h-3" /> Marking Guide</button>
+                <button onClick={() => setViewMode("marking")} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all", viewMode === "marking" ? "bg-brand-800 text-white shadow-lg neon-glow" : "text-foreground opacity-40 hover:opacity-100")}>
+                  {isGenerating ? <Loader2 className="w-3 h-3 animate-spin text-amber-400" /> : <FileCheck className="w-3 h-3" />} Marking Guide
+                </button>
                 <button onClick={() => setViewMode("ref_map")} className={cn("px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all", viewMode === "ref_map" ? "bg-emerald-600 text-white shadow-lg neon-glow" : "text-foreground opacity-40 hover:opacity-100")}><Compass className="w-3 h-3" /> Reference Map</button>
               </div>
 
