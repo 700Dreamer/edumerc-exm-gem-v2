@@ -108,7 +108,7 @@ Return JSON:
     {
       "number": 51,
       "text": "Read the passage below carefully and then answer in full sentences the questions that follow.",
-      "context_block": "Full 180-word story narrative...",
+      "context_block": "Once upon a time in Kasese district, Mr. Mukasa owned a large banana farm. The farm was known for producing the sweetest bananas in the region. People from nearby villages often visited to buy fresh bananas directly from Mr. Mukasa. One day, a strong storm hit Kasese, causing significant damage to the farm. Many banana trees were uprooted, and Mr. Mukasa was deeply worried about his livelihood. Fortunately, the villagers came together to help him. They worked tirelessly for days to clear the debris and replant new banana trees. Their hard work and unity paid off, as the farm soon began to thrive once again. Mr. Mukasa was grateful and decided to organize a feast to thank the villagers for their support. From that day on, the farm not only became a source of income but also a symbol of community strength and resilience.",
       "type": "structured",
       "marks": 10,
       "sub_questions": [
@@ -294,8 +294,17 @@ Return JSON:
                 q["type"] = "structured"
                 q["marks"] = 10
                 
+                # Special Formatting for Q51 (Comprehension Passage)
+                if q_num == 51:
+                    fallback_story = """Once upon a time in Kasese district, Mr. Mukasa owned a large banana farm. The farm was known for producing the sweetest bananas in the region. People from nearby villages often visited to buy fresh bananas directly from Mr. Mukasa. One day, a strong storm hit Kasese, causing significant damage to the farm. Many banana trees were uprooted, and Mr. Mukasa was deeply worried about his livelihood. Fortunately, the villagers came together to help him. They worked tirelessly for days to clear the debris and replant new banana trees. Their hard work and unity paid off, as the farm soon began to thrive once again. Mr. Mukasa was grateful and decided to organize a feast to thank the villagers for their support. From that day on, the farm not only became a source of income but also a symbol of community strength and resilience."""
+                    raw_ctx = q.get("context_block", "").replace("\\n", "\n")
+                    if not raw_ctx or "Full 180-word" in raw_ctx or "story narrative" in raw_ctx or "Sample stimulus" in raw_ctx or len(raw_ctx.strip()) < 80:
+                        q["context_block"] = fallback_story
+                    else:
+                        q["context_block"] = raw_ctx
+
                 # Special Formatting for Q52 (Poem)
-                if q_num == 52:
+                elif q_num == 52:
                     fallback_poem = """A DREAM OF BEING A SPORTS CELEBRITY\n\nI must be a football champion,\nJust like Christiano Ronaldo the captain,\nWhose first goal helped Portugal,\nTo qualify for the 2004 World Cup.\n\nGrowing as an orphan is never a limit,\nI will make it just like Lionel Messi did,\nThe top scorer in the premier league ever,\nWho is paid highly and famous everywhere.\n\nI must be a real champion,\nDreaming to be the captain of Uganda Cranes,\nJust like Mbappe and his country France,\nThe best football dribbler in the world."""
                     raw_ctx = q.get("context_block", "").replace("\\n", "\n")
                     if not raw_ctx or "Stanza 1..." in raw_ctx or "Sample stimulus" in raw_ctx or len(raw_ctx.strip()) < 50:
