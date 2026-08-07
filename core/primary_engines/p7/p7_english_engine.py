@@ -139,7 +139,7 @@ Return JSON:
     {
       "number": 52,
       "text": "Read the poem below carefully and answer in full sentences the questions that follow.",
-      "context_block": "Stanza 1...\n\nStanza 2...\n\nStanza 3...",
+      "context_block": "A DREAM OF BEING A SPORTS CELEBRITY\n\nI must be a football champion,\nJust like Christiano Ronaldo the captain,\nWhose first goal helped Portugal,\nTo qualify for the 2004 World Cup.\n\nGrowing as an orphan is never a limit,\nI will make it just like Lionel Messi did,\nThe top scorer in the premier league ever,\nWho is famous and respected everywhere.\n\nI must be a real champion,\nDreaming to be the captain of Uganda Cranes,\nJust like Mbappe and his country France,\nThe best football dribbler in the world.",
       "type": "structured",
       "marks": 10,
       "sub_questions": [
@@ -369,6 +369,14 @@ Enock: Goodbye, Ukasha.
 Ukasha: ___________________________________________________"""
                     q["sub_questions"] = [] # No duplicate lines below the dialogue box
 
+                elif q_num == 52:
+                    fallback_poem = """A DREAM OF BEING A SPORTS CELEBRITY\n\nI must be a football champion,\nJust like Christiano Ronaldo the captain,\nWhose first goal helped Portugal,\nTo qualify for the 2004 World Cup.\n\nGrowing as an orphan is never a limit,\nI will make it just like Lionel Messi did,\nThe top scorer in the premier league ever,\nWho is paid highly and famous everywhere.\n\nI must be a real champion,\nDreaming to be the captain of Uganda Cranes,\nJust like Mbappe and his country France,\nThe best football dribbler in the world."""
+                    raw_ctx = q.get("context_block", "").replace("\\n", "\n")
+                    if not raw_ctx or "Stanza 1..." in raw_ctx or "Sample stimulus" in raw_ctx or len(raw_ctx.strip()) < 50:
+                        q["context_block"] = fallback_poem
+                    else:
+                        q["context_block"] = raw_ctx
+
                 elif q.get("context_block"):
                     q["context_block"] = q["context_block"].replace("\\n", "\n")
 
@@ -376,7 +384,43 @@ Ukasha: ___________________________________________________"""
             raise ValueError(f"No item generated for Q{q_num}")
         except Exception as e:
             print(f"P7 English Sec B Item Error (Q{q_num}): {e}")
-            if q_num == 54:
+            if q_num == 52:
+                fallback_poem = """A DREAM OF BEING A SPORTS CELEBRITY
+
+I must be a football champion,
+Just like Christiano Ronaldo the captain,
+Whose first goal helped Portugal,
+To qualify for the 2004 World Cup.
+
+Growing as an orphan is never a limit,
+I will make it just like Lionel Messi did,
+The top scorer in the premier league ever,
+Who is paid highly and famous everywhere.
+
+I must be a real champion,
+Dreaming to be the captain of Uganda Cranes,
+Just like Mbappe and his country France,
+The best football dribbler in the world."""
+                return {
+                    "number": 52,
+                    "text": "Read the poem below carefully and answer in full sentences the questions that follow.",
+                    "context_block": fallback_poem,
+                    "type": "structured",
+                    "marks": 10,
+                    "sub_questions": [
+                        { "label": "(a)", "text": "What is the poem about?", "marks": 1 },
+                        { "label": "(b)", "text": "How many stanzas has the poem?", "marks": 1 },
+                        { "label": "(c)", "text": "Which sport is mentioned in the poem?", "marks": 1 },
+                        { "label": "(d)", "text": "Who is the captain of Portugal mentioned in stanza one?", "marks": 1 },
+                        { "label": "(e)", "text": "Which player grew up as an orphan according to stanza two?", "marks": 1 },
+                        { "label": "(f)", "text": "Why does the poet want to be like Lionel Messi?", "marks": 1 },
+                        { "label": "(g)", "text": "Which national team does the poet dream to captain?", "marks": 1 },
+                        { "label": "(h)", "text": "From which country is Mbappe?", "marks": 1 },
+                        { "label": "(i)", "text": "Who is described as the best dribbler in the world?", "marks": 1 },
+                        { "label": "(j)", "text": "Suggest a suitable title for the poem.", "marks": 1 }
+                    ]
+                }
+            elif q_num == 54:
                 sol_table = """
 <div style="margin-top:14px; margin-bottom:14px;">
   <div style="font-weight:bold; font-size:13.5px; margin-bottom:5px;">Solution Table</div>
