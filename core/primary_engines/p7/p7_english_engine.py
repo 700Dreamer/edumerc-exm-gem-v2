@@ -50,10 +50,11 @@ SUB-GROUP INSTRUCTION: "{instr}"
 
 Generate exactly {count} short-answer questions for P.7 English starting at Q{start_num}.
 - Instructions for this group: "{instr}"
-- Stem format MUST be clean without redundant parenthetical instructions inside the stem.
-- For Homophones (Q23-24): Provide word pair e.g. "Weight / Wait" and ask candidate to use each in a sentence.
+- STRICT RULE: Do NOT repeat the group instruction inside the question text stem!
+- For Homophones (Q23-24): Provide word pair e.g. "accept / except" or "weight / wait".
+- For Alphabetical order (Q27-28): Provide comma-separated words ONLY e.g. "cat, apple, banana".
 - For Underlined words (Q18-20, Q21-22, Q29-30): Wrap target words in HTML <u> tags e.g. "The referee told the player to <u>start again the game</u>."
-- For Sentence Rearranging (Q25-26): Format words separated by slashes e.g. "how / to / know / I / ride / a / bicycle."
+- For Sentence Rearranging (Q25-26): Format words separated by slashes ONLY e.g. "how / to / know / I / ride / a / bicycle."
 - Each item MUST have "type": "short_answer", "marks": 1.
 
 Return JSON:
@@ -257,9 +258,32 @@ Return JSON:
                 q["type"] = "short_answer"
                 q["marks"] = 1
                 q["instruction_group"] = P7EnglishEngine.get_subgroup_instruction(qnum)
-                if 25 <= qnum <= 26 and "/" not in q.get("text", ""):
-                    words = [w.strip() for w in q.get("text", "").replace(".", "").split() if w.strip()]
-                    q["text"] = " / ".join(words)
+                # Clean stem text to prevent repeating sub-group instructions inside stems
+                raw_text = q.get("text", "")
+                if 23 <= qnum <= 24:
+                    words = re.findall(r'["\']([a-zA-Z]+)["\']', raw_text)
+                    if len(words) < 2:
+                        words = [w.strip() for w in raw_text.replace("and", "/").split("/") if w.strip()]
+                    if len(words) >= 2:
+                        q["type"] = "structured"
+                        q["text"] = ""
+                        q["sub_questions"] = [
+                            {"label": "(a)", "text": f"{words[0]}:", "marks": 1},
+                            {"label": "(b)", "text": f"{words[1]}:", "marks": 1}
+                        ]
+                elif 25 <= qnum <= 26:
+                    clean = re.sub(r'^(rearrange the given words to form a correct sentence|rearrange the words to form a correct sentence|rearrange the given words|form a correct sentence).*?:?\s*', '', raw_text, flags=re.I)
+                    raw_words = [w.strip() for w in clean.replace(".", "").split("/") if w.strip()]
+                    if len(raw_words) < 2:
+                        raw_words = [w.strip() for w in clean.replace(".", "").split() if w.strip()]
+                    q["text"] = " / ".join(raw_words)
+                elif 27 <= qnum <= 28:
+                    clean = re.sub(r'^(rearrange the following words in alphabetical order:|arrange the following words in alphabetical order:|rearrange the following words|arrange the following words|in alphabetical order).*?:?\s*', '', raw_text, flags=re.I)
+                    q["text"] = clean.strip()
+                elif 16 <= qnum <= 17:
+                    clean = re.sub(r'^(write the full form of the contraction|write the full form of the given|write the full form of|write the plural form of the word|write the plural form of).*?:?\s*', '', raw_text, flags=re.I)
+                    clean = clean.replace('"', '').strip()
+                    q["text"] = clean
             return qs[:count]
         except Exception as e:
             print(f"P7 English Sec A Chunk Error (Q{start_num}): {e}")
