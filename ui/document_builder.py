@@ -1113,6 +1113,15 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
     q_type = q.get("type", "short_answer")
     options = q.get("options", [])
     sub_questions = q.get("sub_questions", [])
+    
+    if is_marking_guide:
+        if not ans:
+            ans = q.get("marking_guide_answer") or q.get("solution") or "Correct answer as specified in UNEB marking guide."
+        if sub_questions:
+            for sub in sub_questions:
+                if isinstance(sub, dict) and not sub.get("answer"):
+                    sub["answer"] = sub.get("solution") or sub.get("expected") or "Correct response / explanation as per marking guide."
+
     fill_words = q.get("fill_words", [])
     match_left = q.get("match_left", [])
     match_right = q.get("match_right", [])
