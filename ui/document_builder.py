@@ -320,7 +320,7 @@ body {{
 .ex-panel th {{ border: 1px solid #000; padding: 6px; font-weight:bold; }}
 .ex-panel td {{ border: 1px solid #000; padding: 6px; text-align: center; height: 26px; }}
 
-.body-c {{ font-size: 15.5px; line-height: 2.2; white-space: pre-wrap; font-family: "Times New Roman", Times, serif !important; }}
+.body-c {{ font-size: 15.5px; line-height: 2.2; white-space: pre-wrap; font-family: inherit; }}
 .pgn {{ position: absolute; bottom: 15mm; left: 0; width: 100%; text-align: center; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; }}
 
 /* ── ANSWER LINES ── */
@@ -333,7 +333,7 @@ body {{
 .ill-box svg * {{ stroke-width: 2px !important; }}
 
 /* ── REAL PAPER (UNEB) PROTOCOL ── */
-.tmpl-uneb {{ font-family: "Times New Roman", serif !important; }}
+.tmpl-uneb {{ font-family: inherit; }}
 .tmpl-uneb.page {{ border: 6px double #000 !important; box-shadow: none !important; border-radius: 0 !important; }}
 .tmpl-uneb .brand-h {{ flex-direction: column !important; align-items: center !important; text-align: center !important; border-bottom: 2px solid #000 !important; }}
 .tmpl-uneb .brand-name {{ font-family: serif !important; text-transform: uppercase !important; font-size: 24px !important; font-weight:bold !important; font-style: normal !important; color: #000 !important; margin-top:5px !important; }}
@@ -410,7 +410,7 @@ body {{
 <!-- SECONDARY UCE COMPETENCY ASSESSMENT PAPER -->
 <div class="page" id="mainP">
   <!-- NAME & STREAM HEADER LINE -->
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:14px; font-family:'Times New Roman', serif; margin-bottom:25px; border-bottom:1px solid #000; padding-bottom:6px;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:14px; font-family:inherit; margin-bottom:25px; border-bottom:1px solid #000; padding-bottom:6px;">
     <div style="display:flex; flex:3; align-items:flex-end;">
       <span style="font-weight:bold;">NAME:</span> 
       <div style="flex:1; border-bottom:1px solid #000; margin-left:8px; height:15px;"></div>
@@ -422,7 +422,7 @@ body {{
   </div>
 
   <!-- TITLE BLOCK -->
-  <div style="text-align:center; font-family:'Times New Roman', serif; margin-bottom:25px; line-height:1.4;">
+  <div style="text-align:center; font-family:inherit; margin-bottom:25px; line-height:1.4;">
     <div style="font-size:17px; font-weight:bold;">Uganda Certificate of Education</div>
     <div style="font-size:15px; font-weight:bold; text-transform:uppercase; margin-top:4px;">{exam_type} {term_roman} ASSESSMENT {exam_year}</div>
     <div style="font-size:17px; font-weight:bold; text-transform:uppercase; margin-top:4px;">{short_lvl} {subject.upper()}</div>
@@ -431,7 +431,7 @@ body {{
   </div>
 
   <!-- INSTRUCTIONS TO CANDIDATES -->
-  <div style="font-family:'Times New Roman', serif; margin-bottom:25px; line-height:1.6;">
+  <div style="font-family:inherit; margin-bottom:25px; line-height:1.6;">
     <div style="font-weight:bold; font-size:14.5px; margin-bottom:4px;">INSTRUCTIONS TO CANDIDATES:</div>
     <div style="font-style:italic; font-size:14px;">
       This paper consists of {sec_b_count if sec_b_count > 0 else question_count} items;<br/>
@@ -449,7 +449,7 @@ body {{
 <!-- PAGE 1: HEADER & INSTRUCTIONS -->
 <div class="page tmpl-uneb" id="mainP">
   <!-- OFFICIAL EXAM HEADER -->
-  <div style="text-align: center; font-family: 'Times New Roman', Times, serif; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 12px;">
+  <div style="text-align: center; font-family: inherit; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 12px;">
     <div style="font-size: 18px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #000;">EDUQUEST EXAMINATIONS BOARD</div>
     <div style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 3px; color: #000;">PRIMARY ASSESSMENT EXAMINATION</div>
     <div style="font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; color: #000;">{subject.upper()}</div>
@@ -458,7 +458,7 @@ body {{
   </div>
 
   <!-- CANDIDATE IDENTIFICATION BOX -->
-  <div style="border: 1.5px solid #000; padding: 12px 16px; margin-bottom: 20px; font-family: 'Times New Roman', Times, serif; font-size: 13px; background: white;">
+  <div style="border: 1.5px solid #000; padding: 12px 16px; margin-bottom: 20px; font-family: inherit; font-size: 13px; background: white;">
     <div style="display: flex; align-items: center; margin-bottom: 10px;">
       <span style="font-weight: bold; margin-right: 8px;">Candidate's Name:</span> 
       <div style="flex: 1; border-bottom: 1.5px dotted #000; height: 16px;"></div>
@@ -707,12 +707,12 @@ document.addEventListener("DOMContentLoaded", function() {{
         footerDiv.style.right = '40px';
         footerDiv.style.display = 'flex';
         footerDiv.style.justifyContent = 'space-between';
-        footerDiv.style.fontFamily = '"Times New Roman", Times, serif';
+        footerDiv.style.fontFamily = 'inherit';
         
         if (i < allPages.length - 1) {{
-            footerDiv.innerHTML = '<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:15px; font-weight:bold; font-family:\'Times New Roman\', serif;">' + (i + 1) + '</span><span style="flex:1; text-align:right; font-style:italic; font-weight:bold; font-size:15px; font-family:\'Times New Roman\', serif;">Turn Over</span>';
+            footerDiv.innerHTML = '<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:15px; font-weight:bold; font-family:inherit;">' + (i + 1) + '</span><span style="flex:1; text-align:right; font-style:italic; font-weight:bold; font-size:15px; font-family:inherit;">Turn Over</span>';
         }} else {{
-            footerDiv.innerHTML = '<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:15px; font-weight:bold; font-family:\'Times New Roman\', serif;">' + (i + 1) + '</span><span style="flex:1; text-align:right; font-weight:bold; font-size:15px; font-family:\'Times New Roman\', serif;">END</span>';
+            footerDiv.innerHTML = '<span style="flex:1;"></span><span style="flex:1; text-align:center; font-size:15px; font-weight:bold; font-family:inherit;">' + (i + 1) + '</span><span style="flex:1; text-align:right; font-weight:bold; font-size:15px; font-family:inherit;">END</span>';
         }}
         page.appendChild(footerDiv);
     }}
