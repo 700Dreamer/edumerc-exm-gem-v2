@@ -482,7 +482,7 @@ Return JSON:
             term_roman="2025",
             exam_year="2025",
             duration="2 hours 15 minutes",
-            school_name="UGANDA NATIONAL EXAMINATIONS BOARD",
+            school_name="EDUQUEST EXAMINATIONS BOARD",
             brand_name=brand_name,
             question_count=len(all_questions),
             content_raw=raw_str,

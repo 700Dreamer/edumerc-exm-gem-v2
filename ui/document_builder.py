@@ -181,7 +181,9 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
     """
     Constructs the full HTML document string, utilizing strict JSON outputs to guarantee formatting.
     """
-    
+    if school_name == "UGANDA NATIONAL EXAMINATIONS BOARD" or "UGANDA NATIONAL" in str(school_name):
+        school_name = "EDUQUEST EXAMINATIONS BOARD"
+
     title_text = f"{exam_type} {term_roman} EXAMINATIONS {exam_year}".upper() if mode == "Exams" else f"{subject} | {topic}".upper()
     
     # ── OFFICIAL PAPER STRUCTURE (from UNEB registry) ──
