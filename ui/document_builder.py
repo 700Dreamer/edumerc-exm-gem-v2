@@ -1264,12 +1264,60 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
     sub_questions = q.get("sub_questions", [])
     
     if is_marking_guide:
-        if not ans:
-            ans = q.get("marking_guide_answer") or q.get("solution") or "Correct answer as specified in UNEB marking guide."
+        if not ans or str(ans).strip() == "":
+            ans = (
+                q.get("answer") or
+                q.get("marking_guide_answer") or
+                q.get("solution") or
+                q.get("expected_answer") or
+                q.get("correct_answer") or
+                q.get("expected") or
+                q.get("response") or
+                ""
+            )
+
+        if not ans or str(ans).strip() == "":
+            text_str = str(text)
+            m_bracket = re.search(r'\(([^)]+)\)', text_str)
+            if m_bracket:
+                base_word = m_bracket.group(1).strip()
+                ans = f"Correct form of '{base_word}'"
+            elif "rearrange" in text_str.lower() or "alphabetical" in text_str.lower():
+                ans = "Correct ordered sequence as per rules."
+            elif "abbreviation" in text_str.lower() or "full form" in text_str.lower():
+                ans = "Full expanded form of abbreviation."
+            elif "opposite" in text_str.lower():
+                ans = "Correct opposite / antonym of underlined word."
+            elif "plural" in text_str.lower():
+                ans = "Correct plural form of underlined word."
+            else:
+                ans = "Correct response as specified in curriculum marking guide."
+
         if sub_questions:
             for sub in sub_questions:
-                if isinstance(sub, dict) and not sub.get("answer"):
-                    sub["answer"] = sub.get("solution") or sub.get("expected") or "Correct response / explanation as per marking guide."
+                if isinstance(sub, dict):
+                    sub_ans = (
+                        sub.get("answer") or
+                        sub.get("marking_guide_answer") or
+                        sub.get("solution") or
+                        sub.get("expected_answer") or
+                        sub.get("correct_answer") or
+                        sub.get("expected") or
+                        ""
+                    )
+                    if not sub_ans or str(sub_ans).strip() == "":
+                        sub_text = str(sub.get("text", ""))
+                        if "who" in sub_text.lower():
+                            sub_ans = "Name of character / person in context."
+                        elif "where" in sub_text.lower():
+                            sub_ans = "Location / place as stated in passage."
+                        elif "when" in sub_text.lower():
+                            sub_ans = "Date / time as stated in passage."
+                        elif "why" in sub_text.lower():
+                            sub_ans = "Reason / explanation as per context."
+                        else:
+                            sub_ans = "Correct response / explanation as per marking guide."
+                    sub["answer"] = sub_ans
 
     fill_words = q.get("fill_words", [])
     match_left = q.get("match_left", [])

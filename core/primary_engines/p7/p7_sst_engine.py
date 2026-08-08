@@ -26,7 +26,7 @@ INSTRUCTION: "In each of the questions {start_num} to {end_num}, answer the ques
 
 Generate exactly {count} short-answer primary SST questions for Primary 7 starting at Q{start_num}.
 - Directly test core Ugandan P.7 SST syllabus strands: Location & Geography of East Africa & Africa, Climate & Vegetation, Economic Development & Trade, History & Pan-African Movement, Government & Civics, Peace & Security.
-- Each item MUST have "type": "short_answer", "marks": 1.
+- Each item MUST have "type": "short_answer", "marks": 1, and an explicit, concise, correct "answer" field.
 - Provide dotted line fill space at the end of each stem: "..........................................".
 
 Return JSON:
@@ -36,7 +36,8 @@ Return JSON:
       "number": {start_num},
       "text": "Give one way a school motto is important. ..........................................",
       "type": "short_answer",
-      "marks": 1
+      "marks": 1,
+      "answer": "It guides and inspires pupils to work hard and maintain discipline."
     }}
   ]
 }}

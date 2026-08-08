@@ -55,16 +55,17 @@ Generate exactly {count} short-answer questions for P.7 English starting at Q{st
 - For Alphabetical order (Q27-28): Provide comma-separated words ONLY e.g. "cat, apple, banana".
 - For Underlined words (Q18-20, Q21-22, Q29-30): Wrap target words in HTML <u> tags e.g. "The referee told the player to <u>start again the game</u>."
 - For Sentence Rearranging (Q25-26): Format words separated by slashes ONLY e.g. "how / to / know / I / ride / a / bicycle."
-- Each item MUST have "type": "short_answer", "marks": 1.
+- Each item MUST have "type": "short_answer", "marks": 1, and an explicit, correct, concise "answer" field.
 
 Return JSON:
 {{
   "questions": [
     {{
       "number": {start_num},
-      "text": "Sentence stem with blank line _________________.",
+      "text": "The sun rises in the _________________.",
       "type": "short_answer",
-      "marks": 1
+      "marks": 1,
+      "answer": "east"
     }}
   ]
 }}
@@ -77,16 +78,17 @@ INSTRUCTION GROUP: "Sub-section II\\nIn each of the questions 31 to 50, rewrite 
 
 Generate exactly {count} sentence rewriting questions starting at Q{start_num}.
 - Directives in brackets MUST include boldened target words: (Rewrite as <b>one</b> sentence using: ...... where ......), (Rewrite using: ...... mine), (Rewrite beginning: Remember......), (Rewrite as <b>one</b> sentence beginning: Much as ......), (Rewrite as <b>one</b> sentence beginning: If ......), (Rewrite as <b>one</b> sentence <b>without</b> using "and" or "which"), (Rewrite as <b>one</b> sentence using: ...... neither ...... nor ......).
-- Each item MUST have "type": "short_answer", "marks": 1.
+- Each item MUST have "type": "short_answer", "marks": 1, and an explicit, complete rewritten "answer" field.
 
 Return JSON:
 {{
   "questions": [
     {{
       "number": {start_num},
-      "text": "Original sentence... (Rewrite as <b>one</b> sentence using: ...)",
+      "text": "This is the boy. His father won the race. (Rewrite as <b>one</b> sentence using: ... whose ...)",
       "type": "short_answer",
-      "marks": 1
+      "marks": 1,
+      "answer": "This is the boy whose father won the race."
     }}
   ]
 }}
