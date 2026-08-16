@@ -12,7 +12,7 @@ class SecondarySubjectBlueprint:
     domain: str  # STEM, Humanities, Business, Languages, Vocational
     stimulus_type: str
     stimulus_examples: List[str]
-    cognitive_progression: List[Dict[str, str]]
+    cognitive_progression: List[str]
     negative_constraints: List[str]
 
 # ── SECONDARY SUBJECT BLUEPRINTS REGISTRY ──
@@ -31,10 +31,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Kinematic speed-time or rate-of-output graphs"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Initial parameter calculation or geometric length/area determination", "marks": "3"},
-            {"label": "(b)", "text": "Geometric/algebraic layout optimization or statistical measure calculation", "marks": "4"},
-            {"label": "(c)", "text": "Cost reduction, percentage variation, or rate of output evaluation", "marks": "3"},
-            {"label": "(d)", "text": "Real-world system efficiency, long-term trend analysis, or practical community recommendation", "marks": "5"}
+            "Level 1 - Understand: Initial parameter calculation or geometric length/area determination",
+            "Level 2 - Apply: Geometric/algebraic layout optimization or statistical measure calculation",
+            "Level 3 - Analyze: Cost reduction, percentage variation, or rate of output evaluation",
+            "Level 4 - Evaluate: Real-world system efficiency, long-term trend analysis, or practical community recommendation",
+            "Level 5 - Create: Design a solution, financial model, or structural plan"
         ],
         negative_constraints=[
             "FORBID essay writing or subjective history/humanities trivia.",
@@ -55,10 +56,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Kinematic motion graphs and heat capacity data"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Quantitative calculation or direct physical law determination", "marks": "3"},
-            {"label": "(b)", "text": "Physical mechanism explanation or principle evaluation", "marks": "4"},
-            {"label": "(c)", "text": "Energy loss, efficiency calculation, or safety gear assessment", "marks": "3"},
-            {"label": "(d)", "text": "Real-world practical application, impulse/force safety analysis, or optical implication", "marks": "5"}
+            "Level 1 - Understand: Direct physical law determination",
+            "Level 2 - Apply: Quantitative calculation using physical laws",
+            "Level 3 - Analyze: Energy loss, efficiency calculation, or safety gear assessment",
+            "Level 4 - Evaluate: Real-world practical application, impulse/force safety analysis, or optical implication",
+            "Level 5 - Create: Design an experiment, safety system, or circuit layout"
         ],
         negative_constraints=[
             "FORBID non-scientific fluff or subjective opinions without physical laws.",
@@ -78,10 +80,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Laboratory setup diagrams and industrial extraction schematics"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Chemical equation balancing or product identification", "marks": "3"},
-            {"label": "(b)", "text": "Reaction rate or stoichiometry calculation / experiment evaluation", "marks": "4"},
-            {"label": "(c)", "text": "Industrial yield optimization or environmental pollution assessment", "marks": "3"},
-            {"label": "(d)", "text": "Practical industrial, household, or environmental chemical impact analysis", "marks": "5"}
+            "Level 1 - Understand: Product identification and property definition",
+            "Level 2 - Apply: Chemical equation balancing and stoichiometry calculation",
+            "Level 3 - Analyze: Reaction rate evaluation or experimental yield analysis",
+            "Level 4 - Evaluate: Environmental pollution assessment or industrial process efficiency",
+            "Level 5 - Create: Design a safe laboratory setup or industrial extraction schematic"
         ],
         negative_constraints=[
             "FORBID non-chemical trivia or non-scientific stories.",
@@ -101,10 +104,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Plant and animal structural adaptation data"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Biological process identification or organ/structure function analysis", "marks": "3"},
-            {"label": "(b)", "text": "Physiological mechanism explanation or adaptation evaluation", "marks": "4"},
-            {"label": "(c)", "text": "Ecological impact, disease control, or genetic trait assessment", "marks": "3"},
-            {"label": "(d)", "text": "Health, environmental conservation, or agricultural productivity synthesis", "marks": "5"}
+            "Level 1 - Understand: Biological process identification or structure function analysis",
+            "Level 2 - Apply: Physiological mechanism explanation",
+            "Level 3 - Analyze: Ecological impact, disease control, or genetic trait assessment",
+            "Level 4 - Evaluate: Environmental conservation or agricultural productivity synthesis",
+            "Level 5 - Create: Design an ecological experiment, dietary plan, or public health intervention"
         ],
         negative_constraints=[
             "FORBID date subtraction or non-biological story filler.",
@@ -123,10 +127,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Trade route timelines and diplomatic correspondence excerpts"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Specific historical cause, treaty clause, or primary source analysis", "marks": "3"},
-            {"label": "(b)", "text": "Socio-economic impact, diplomatic strategy, or colonial policy evaluation", "marks": "4"},
-            {"label": "(c)", "text": "Critical assessment of historical evidence, bias, or kingdom resistance", "marks": "3"},
-            {"label": "(d)", "text": "Long-term national development, unity, or modern relevance implication", "marks": "5"}
+            "Level 1 - Understand: Identify historical figures, events, or primary source context",
+            "Level 2 - Apply: Explain specific historical causes or treaty clauses",
+            "Level 3 - Analyze: Socio-economic impact, diplomatic strategy, or colonial policy evaluation",
+            "Level 4 - Evaluate: Critical assessment of historical evidence, bias, or kingdom resistance",
+            "Level 5 - Create: Long-term national development, unity, or modern relevance synthesis"
         ],
         negative_constraints=[
             "CRITICAL BAN: FORBID date subtraction arithmetic (e.g. 'Calculate years from 1950 to 2023'). Subtracting years is NOT History.",
@@ -147,10 +152,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Trade balance figures and population distribution maps"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Geographic feature identification, climate data reading, or location factor", "marks": "3"},
-            {"label": "(b)", "text": "Formation mechanism explanation or land-use pattern assessment", "marks": "4"},
-            {"label": "(c)", "text": "Environmental hazard, erosion control, or resource conflict evaluation", "marks": "3"},
-            {"label": "(d)", "text": "Sustainable regional development, conservation policy, or economic planning synthesis", "marks": "5"}
+            "Level 1 - Understand: Geographic feature identification or climate data reading",
+            "Level 2 - Apply: Formation mechanism explanation or map data calculation",
+            "Level 3 - Analyze: Land-use pattern assessment or environmental hazard evaluation",
+            "Level 4 - Evaluate: Resource conflict resolution or erosion control policy evaluation",
+            "Level 5 - Create: Sustainable regional development or conservation plan design"
         ],
         negative_constraints=[
             "FORBID date subtraction or non-geographical trivia.",
@@ -170,10 +176,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "National income and employment data tables"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Equilibrium price/quantity calculation or elasticity determination", "marks": "3"},
-            {"label": "(b)", "text": "Market structure or government fiscal policy impact assessment", "marks": "4"},
-            {"label": "(c)", "text": "Trade deficit, inflation control, or resource allocation evaluation", "marks": "3"},
-            {"label": "(d)", "text": "National economic development, employment policy, or poverty alleviation synthesis", "marks": "5"}
+            "Level 1 - Understand: Define economic terms or identify market structures",
+            "Level 2 - Apply: Equilibrium price/quantity calculation or elasticity determination",
+            "Level 3 - Analyze: Government fiscal policy impact or trade deficit assessment",
+            "Level 4 - Evaluate: Inflation control, resource allocation, or taxation policy evaluation",
+            "Level 5 - Create: National economic development or poverty alleviation policy proposal"
         ],
         negative_constraints=[
             "FORBID non-economic story filler.",
@@ -192,10 +199,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Customer survey feedback and market feasibility metrics"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Profit/loss or break-even volume calculation", "marks": "3"},
-            {"label": "(b)", "text": "Business opportunity and marketing strategy evaluation", "marks": "4"},
-            {"label": "(c)", "text": "Risk management or financial resource optimization", "marks": "3"},
-            {"label": "(d)", "text": "Long-term business sustainability and community value creation synthesis", "marks": "5"}
+            "Level 1 - Understand: Identify business opportunities or market feasibility metrics",
+            "Level 2 - Apply: Profit/loss or break-even volume calculation",
+            "Level 3 - Analyze: Risk management or marketing strategy assessment",
+            "Level 4 - Evaluate: Financial resource optimization or competitor analysis",
+            "Level 5 - Create: Business plan creation or long-term sustainability modeling"
         ],
         negative_constraints=[
             "FORBID non-business story filler.",
@@ -214,10 +222,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Poem extracts and formal correspondence letters"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Passage comprehension and contextual vocabulary extraction", "marks": "3"},
-            {"label": "(b)", "text": "Character motivation or literary device analysis", "marks": "4"},
-            {"label": "(c)", "text": "Summary & main argument synthesis", "marks": "3"},
-            {"label": "(d)", "text": "Guided composition / formal letter writing / critical reflection", "marks": "5"}
+            "Level 1 - Understand: Passage comprehension and vocabulary extraction",
+            "Level 2 - Apply: Character motivation or rhetorical device identification",
+            "Level 3 - Analyze: Thematic analysis or persuasive argument breakdown",
+            "Level 4 - Evaluate: Critical reflection or tone/bias assessment",
+            "Level 5 - Create: Guided composition, formal letter writing, or speech drafting"
         ],
         negative_constraints=[
             "FORBID science formulas or mathematical calculations.",
@@ -236,10 +245,11 @@ SECONDARY_BLUEPRINTS: Dict[str, SecondarySubjectBlueprint] = {
             "Soil PH test results and erosion control layouts"
         ],
         cognitive_progression=[
-            {"label": "(a)", "text": "Agricultural input calculation or crop/livestock symptom identification", "marks": "3"},
-            {"label": "(b)", "text": "Farming technique or soil management practice evaluation", "marks": "4"},
-            {"label": "(c)", "text": "Pest/disease control or post-harvest loss reduction strategy", "marks": "3"},
-            {"label": "(d)", "text": "Agribusiness profitability and sustainable farming synthesis", "marks": "5"}
+            "Level 1 - Understand: Agricultural input calculation or symptom identification",
+            "Level 2 - Apply: Farming technique or soil management practice implementation",
+            "Level 3 - Analyze: Pest/disease control or post-harvest loss causes",
+            "Level 4 - Evaluate: Agribusiness profitability or environmental sustainability assessment",
+            "Level 5 - Create: Farm plan design or integrated pest management strategy"
         ],
         negative_constraints=[
             "FORBID non-agricultural stories.",
@@ -295,10 +305,11 @@ def get_secondary_blueprint(subject: str) -> SecondarySubjectBlueprint:
         stimulus_type="CONTEXTUAL_CASE_STUDY_DATA",
         stimulus_examples=["Contextual case study data", "Reference table or diagram"],
         cognitive_progression=[
-            {"label": "(a)", "text": f"Direct contextual analysis for {subject}", "marks": "3"},
-            {"label": "(b)", "text": f"Method evaluation and mechanism explanation for {subject}", "marks": "4"},
-            {"label": "(c)", "text": f"Optimization and critical assessment for {subject}", "marks": "3"},
-            {"label": "(d)", "text": f"Real-world synthesis and long-term practical recommendation for {subject}", "marks": "5"}
+            "Level 1 - Understand: Direct contextual analysis",
+            "Level 2 - Apply: Method evaluation and mechanism explanation",
+            "Level 3 - Analyze: Optimization and critical assessment",
+            "Level 4 - Evaluate: Real-world synthesis and long-term practical recommendation",
+            "Level 5 - Create: Strategic plan or comprehensive solution design"
         ],
         negative_constraints=[f"FORBID non-{subject} fluff. Every item must be scenario-anchored."]
     )
@@ -310,13 +321,8 @@ class SecondaryPromptSynthesizer:
         """
         Synthesizes a 100% subject-isolated, zero-bleed UCE competency prompt.
         """
-        progression_str = "\n".join(
-            f"  {p['label']} {p['text']} ({p['marks']} marks)"
-            for p in blueprint.cognitive_progression
-        )
-        constraints_str = "\n".join(
-            f"  - {c}" for c in blueprint.negative_constraints
-        )
+        progression_str = "\n".join(f"  - {p}" for p in blueprint.cognitive_progression)
+        constraints_str = "\n".join(f"  - {c}" for c in blueprint.negative_constraints)
         stimulus_str = ", ".join(blueprint.stimulus_examples[:3])
 
         topic_clause = f"ASSIGNED SYLLABUS TOPIC: {topic}" if topic else f"Select 3 distinct core syllabus topics for {blueprint.name.upper()} in {level}."
@@ -333,27 +339,49 @@ EVERY SINGLE ITEM MUST HAVE ITS OWN UNIQUE, INDEPENDENT REAL-WORLD SCENARIO NARR
 
 SUBJECT COMPETENCY BLUEPRINT ({blueprint.name.upper()}):
 - STIMULUS DATA TYPE ({blueprint.stimulus_type}): {stimulus_str}
-- COGNITIVE SUB-QUESTION PROGRESSION:
+- BLOOM'S TAXONOMY PROGRESSION FRAMEWORK:
 {progression_str}
 
 STRICT NEGATIVE CONSTRAINTS (FORBIDDEN):
 {constraints_str}
 
-CRITICAL DERIVATION RULE:
-EVERY SUB-QUESTION (a, b, c, d) MUST BE DIRECTLY DERIVED FROM AND EXPLICITLY REFERENCE THE SPECIFIC CHARACTERS, LOCATIONS, NUMERICAL DATA, AND EVENTS DESCRIBED IN THE ITEM'S SCENARIO NARRATIVE.
+CRITICAL STRUCTURE & DERIVATION RULE:
+1. Each item MUST strictly follow the new Scenario -> Context -> Task -> Questions framework. 
+2. SCENARIO LENGTH: The `scenario` MUST be a rich, extended narrative of at least 2 to 3 PARAGRAPHS. It must include specific characters, locations, numerical data, and practical complications.
+3. NO ROTE RECALL: Every single sub-question MUST directly reference the scenario and test how the student would approach solving the specific problem presented. Do not ask generic recall questions (e.g. "What is X?"). Instead, ask applied questions (e.g. "Based on the farmer's situation, explain how...").
+4. Sub-questions must progressively escalate in difficulty according to the Bloom's Taxonomy framework above. Assign realistic marks for each sub-question based on cognitive difficulty (e.g. 1-2 marks for Understand/Apply, 3-5 marks for Analyze/Evaluate/Create).
 
-Each item MUST be structured as:
+Each item MUST be structured as a JSON object:
 {{
   "number": 1,
-  "text": "A rich, detailed real-world scenario narrative (1-2 paragraphs) setting up a practical situation in Uganda for {blueprint.name.upper()}...",
-  "hint": "Given numerical parameters, formulas, constants, or reference text (or empty string)",
-  "task_heading": "Task:",
+  "scenario": "A highly detailed, extended real-world scenario narrative (MUST BE AT LEAST 2-3 PARAGRAPHS) setting up a complex, practical situation in Uganda for {blueprint.name.upper()}.",
+  "context": "Additional background information, data, or context necessary to solve the problem.",
+  "resources": "Describe any required image, table, graph, map, or document (or empty string if none).",
+  "task": "A clear statement of what the learner is expected to do.",
+  "task_heading": "Tasks:",
+  "difficulty": "Medium",
+  "time": "20 minutes",
+  "competency": "Application, analysis, evaluation, problem solving",
   "type": "structured",
   "sub_questions": [
-    {{ "label": "(a)", "text": "Sub-task (a) following cognitive progression for {blueprint.name.upper()} derived directly from the scenario...", "marks": 3 }},
-    {{ "label": "(b)", "text": "Sub-task (b) following cognitive progression for {blueprint.name.upper()} derived directly from the scenario...", "marks": 4 }},
-    {{ "label": "(c)", "text": "Sub-task (c) following cognitive progression for {blueprint.name.upper()} derived directly from the scenario...", "marks": 3 }},
-    {{ "label": "(d)", "text": "Sub-task (d) following cognitive progression for {blueprint.name.upper()} derived directly from the scenario...", "marks": 5 }}
+    {{ 
+      "label": "(a)", 
+      "text": "Sub-question asking the student to Understand/Apply based on the scenario...", 
+      "marks": 2,
+      "expected_answer": "Model answer / marking points here."
+    }},
+    {{ 
+      "label": "(b)", 
+      "text": "Sub-question asking the student to Analyze based on the scenario...", 
+      "marks": 3,
+      "expected_answer": "Model answer / marking points here."
+    }},
+    {{ 
+      "label": "(c)", 
+      "text": "Sub-question asking the student to Evaluate/Create based on the scenario...", 
+      "marks": 4,
+      "expected_answer": "Model answer / marking points here."
+    }}
   ]
 }}
 

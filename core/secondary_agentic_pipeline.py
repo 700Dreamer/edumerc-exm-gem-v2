@@ -21,17 +21,15 @@ class SecondaryItemValidator:
             return False, "Item payload is not a valid JSON object."
 
         # Check required fields
-        if not item.get("text") or len(item.get("text", "").strip()) < 30:
-            return False, "Scenario narrative text is missing or too short."
+        scenario_text = item.get("scenario", "").strip()
+        if not scenario_text or len(scenario_text) < 300:
+            return False, "Scenario narrative text is too short. It must be at least 2-3 paragraphs (approx 300+ characters)."
 
         sub_qs = item.get("sub_questions", [])
-        if not isinstance(sub_qs, list) or len(sub_qs) != 4:
-            return False, f"Item must have exactly 4 sub-questions (a, b, c, d). Found {len(sub_qs)}."
+        if not isinstance(sub_qs, list) or len(sub_qs) < 2:
+            return False, f"Item must have at least 2 sub-questions. Found {len(sub_qs)}."
 
-        # Check sub-question labels and marks
-        expected_marks = [3, 4, 3, 5]
-        labels = ["(a)", "(b)", "(c)", "(d)"]
-
+        # Check sub-question labels and content
         for idx, sq in enumerate(sub_qs):
             lbl = sq.get("label", "").strip()
             # Normalize label format like "a)" -> "(a)"
@@ -41,23 +39,23 @@ class SecondaryItemValidator:
 
             text = sq.get("text", "").strip()
             if not text:
-                return False, f"Sub-question {labels[idx]} text is empty."
+                return False, f"Sub-question {lbl} text is empty."
 
             try:
                 marks = int(sq.get("marks", 0))
             except (ValueError, TypeError):
                 marks = 0
 
-            if marks != expected_marks[idx]:
-                return False, f"Sub-question {labels[idx]} marks must be {expected_marks[idx]}. Found {marks}."
+            if marks < 1:
+                return False, f"Sub-question {lbl} marks must be at least 1."
 
         # Force correct task heading
-        item["task_heading"] = "Task:"
+        item["task_heading"] = "Tasks:"
         item["type"] = "structured"
 
         # Domain negative constraint check
         subj_lower = subject.lower()
-        full_text = (item.get("text", "") + " " + " ".join(sq.get("text", "") for sq in sub_qs)).lower()
+        full_text = (item.get("scenario", "") + " " + item.get("context", "") + " " + " ".join(sq.get("text", "") for sq in sub_qs)).lower()
 
         if "math" in subj_lower:
             forbidden_keywords = ["colonial", "pre-colonial", "treaty", "museum", "governor", "kingdom", "constitution"]
@@ -83,7 +81,7 @@ class SecondaryItemDraftsman:
         prompt = SecondaryPromptSynthesizer.synthesize(blueprint, level, theme, topic)
         
         # Override item number prompt directive
-        prompt += f"\nGenerate item number {item_number}. Output JSON object containing exact keys: 'number', 'text', 'hint', 'task_heading', 'type', 'sub_questions'."
+        prompt += f"\nGenerate item number {item_number}. Output JSON object containing exact keys: 'number', 'scenario', 'context', 'resources', 'task', 'task_heading', 'difficulty', 'time', 'competency', 'type', 'sub_questions'."
 
         try:
             response = await client.chat.completions.create(

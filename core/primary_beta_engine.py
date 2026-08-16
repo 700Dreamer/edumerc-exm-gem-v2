@@ -5,7 +5,7 @@ import json
 import asyncio
 from typing import Dict, List, Tuple, AsyncGenerator
 from dataclasses import dataclass
-from core.ai_engine import get_async_openai_client
+from core.ai_engine import get_async_openai_client, generate_exam_diagram
 from ui.document_builder import build_question_html, build_full_html
 
 @dataclass
@@ -52,7 +52,9 @@ def get_primary_beta_blueprint(subject: str, level: str) -> PrimaryBetaBlueprint
             ],
             negative_constraints=[
                 "FORBID secondary/UCE scenario jargon.",
-                "Keep wording simple, age-appropriate, and directly aligned with Lower Primary syllabus."
+                "Keep wording simple, age-appropriate, and directly aligned with Lower Primary syllabus.",
+                "NEVER include decorative diagrams. ONLY include 'diagram_description' if the student MUST interact with the diagram to answer the question (e.g. 'Name the part marked X'). Otherwise, omit it completely (return null).",
+                "CRITICAL: DO NOT generate or output 'tikz_code'. Raw code is completely forbidden."
             ]
         )
 
@@ -80,7 +82,9 @@ def get_primary_beta_blueprint(subject: str, level: str) -> PrimaryBetaBlueprint
             negative_constraints=[
                 "FORBID multiple choice questions. Generate short_answer for Section A.",
                 "FORBID essay writing or humanities trivia.",
-                "MANDATORY step-by-step mathematical working and imperative math commands ('Calculate...', 'Work out...')."
+                "MANDATORY step-by-step mathematical working and imperative math commands ('Calculate...', 'Work out...').",
+                "NEVER include decorative diagrams. ONLY include 'diagram_description' if the student MUST interact with the diagram to solve the math problem (e.g. finding angles, reading a graph). Otherwise, return null.",
+                "CRITICAL: DO NOT generate or output 'tikz_code'. Raw code is completely forbidden."
             ]
         )
 
@@ -133,15 +137,25 @@ def get_primary_beta_blueprint(subject: str, level: str) -> PrimaryBetaBlueprint
             ],
             negative_constraints=[
                 "FORBID multiple choice questions.",
-                f"Generate 100% {subject}-specific curriculum application items ONLY."
+                f"Generate 100% {subject}-specific curriculum application items ONLY.",
+                "NEVER include decorative diagrams. ONLY include 'diagram_description' if the student MUST study the diagram to answer the question (e.g. 'Use the diagram below...', 'Name part X'). Otherwise, return null.",
+                "CRITICAL: DO NOT generate or output 'tikz_code'. Raw code is completely forbidden."
             ]
         )
 
 class PrimaryPromptSynthesizer:
     @staticmethod
-    def synthesize_section(blueprint: PrimaryBetaBlueprint, section: str, count: int, start_num: int) -> str:
+    def synthesize_section(blueprint: PrimaryBetaBlueprint, section: str, count: int, start_num: int, max_diagrams: int = 1) -> str:
         """Synthesizes prompt for Section A or Section B of Primary Beta paper."""
         constraints_str = "\n".join(f"  - {c}" for c in blueprint.negative_constraints)
+        
+        if max_diagrams == 0:
+            constraints_str += "\n  - CRITICAL DIAGRAM BAN: DO NOT include any 'diagram_description'. You MUST return null for all diagrams in this block."
+        else:
+            constraints_str += f"\n  - STRICT DIAGRAM LIMIT: You are strictly limited to generating a MAXIMUM of {max_diagrams} 'diagram_description' across all questions in this block. The rest MUST be null."
+            constraints_str += "\n  - ANTI-DECORATION RULE (CRITICAL): NEVER generate a diagram just to 'illustrate' the topic. A diagram MUST be the core puzzle of the question."
+            constraints_str += "\n  - IF you generate a diagram, the question 'text' MUST explicitly say 'The diagram below shows... Study it and answer...'. AND the sub-questions MUST ask the student to identify labeled parts. If the questions do not require identifying labeled parts, you MUST NOT generate a diagram."
+            
         is_english = "english" in blueprint.subject_key
 
         if section == "A":
@@ -195,7 +209,7 @@ STRICT RULES:
 Return JSON:
 {{
   "questions": [
-    {{ "number": {start_num}, "text": "Question stem...", "type": "short_answer", "marks": {1 if blueprint.sec_a_marks == blueprint.sec_a_count else 2} }}
+    {{ "number": {start_num}, "text": "Question stem...", "diagram_description": "Detailed visual description of the reference diagram needed, or null if none", "type": "short_answer", "marks": {1 if blueprint.sec_a_marks == blueprint.sec_a_count else 2} }}
   ]
 }}
 """
@@ -252,6 +266,7 @@ Return JSON:
     {{
       "number": {start_num},
       "text": "Main question stem or context...",
+      "diagram_description": "Detailed visual description of the reference diagram needed, or null if none",
       "type": "structured",
       "sub_questions": [
         {{ "label": "(a)", "text": "Sub-task (a)...", "marks": 2 }},
@@ -262,10 +277,10 @@ Return JSON:
 }}
 """
 
-async def generate_primary_beta_chunk(blueprint: PrimaryBetaBlueprint, section: str, count: int, start_num: int) -> List[dict]:
+async def generate_primary_beta_chunk(blueprint: PrimaryBetaBlueprint, section: str, count: int, start_num: int, max_diagrams: int = 1) -> List[dict]:
     """Generates a chunk of questions for Section A or Section B."""
     client = get_async_openai_client()
-    prompt = PrimaryPromptSynthesizer.synthesize_section(blueprint, section, count, start_num)
+    prompt = PrimaryPromptSynthesizer.synthesize_section(blueprint, section, count, start_num, max_diagrams)
 
     try:
         response = await client.chat.completions.create(
@@ -277,12 +292,48 @@ async def generate_primary_beta_chunk(blueprint: PrimaryBetaBlueprint, section: 
         questions = data.get("questions", [])
         
         for idx, q in enumerate(questions):
+            # Aggressively strip any hallucinated tikz_code so the UI never renders it
+            if "tikz_code" in q:
+                del q["tikz_code"]
+                
             q["number"] = start_num + idx
             if section == "A":
                 q["type"] = "short_answer"
                 q["options"] = []
             else:
                 q["type"] = "structured"
+
+        # Generate diagrams concurrently (enforcing max_diagrams programmatic limit)
+        diagrams_generated = 0
+        diagram_tasks = []
+        for q in questions[:count]:
+            desc = q.get("diagram_description")
+            if desc and isinstance(desc, str) and desc.strip() and desc.lower() != "null":
+                
+                # Aggressive Anti-Decoration Filter
+                q_text_lower = q.get("text", "").lower()
+                has_diagram_ref = any(keyword in q_text_lower for keyword in ["diagram", "figure", "study", "below", "picture", "shown"])
+                if not has_diagram_ref:
+                    print(f"DEBUG: Stripping decorative diagram from Q{q.get('number')} - no diagram reference in text.")
+                    q["diagram_description"] = None
+                    continue
+
+                if diagrams_generated >= max_diagrams:
+                    q["diagram_description"] = None
+                    continue
+                
+                diagrams_generated += 1
+                task = asyncio.create_task(generate_exam_diagram(
+                    diagram_description=desc,
+                    subject=blueprint.name,
+                    level=blueprint.level,
+                    question_text=q.get("text", "")
+                ))
+                diagram_tasks.append((q, task))
+        
+        if diagram_tasks:
+            for q, task in diagram_tasks:
+                q["diagram_url"] = await task
 
         return questions[:count]
     except Exception as e:
@@ -333,17 +384,21 @@ async def stream_primary_beta_paper(subject: str, level: str, brand_name: str = 
     # ── STEP 2: SECTION A PARALLEL GENERATION ──
     yield f"data: {json.dumps({'event_type': 'status_update', 'message': f'Drafting Section A ({blueprint.sec_a_count} Questions)...'})}\n\n"
 
-    # Chunk Section A into batch sizes of 10 for fast parallel generation
-    sec_a_chunks = []
-    chunk_size = 10 if blueprint.sec_a_count >= 20 else blueprint.sec_a_count
-    for i in range(0, blueprint.sec_a_count, chunk_size):
-        c_count = min(chunk_size, blueprint.sec_a_count - i)
-        sec_a_chunks.append((i + 1, c_count))
-
-    sec_a_tasks = [
-        asyncio.create_task(generate_primary_beta_chunk(blueprint, "A", c_count, start_num))
-        for start_num, c_count in sec_a_chunks
-    ]
+    sec_a_tasks = []
+    num_chunks = blueprint.sec_a_count // 10
+    for i in range(num_chunks):
+        # Enforce max 2 diagrams total in Section A (1 per first two chunks)
+        max_d = 1 if i < 2 else 0
+        sec_a_tasks.append(
+            asyncio.create_task(generate_primary_beta_chunk(blueprint, "A", 10, i * 10 + 1, max_diagrams=max_d))
+        )
+    
+    # If there's a remainder
+    rem = blueprint.sec_a_count % 10
+    if rem > 0:
+        sec_a_tasks.append(
+            asyncio.create_task(generate_primary_beta_chunk(blueprint, "A", rem, num_chunks * 10 + 1, max_diagrams=0))
+        )
 
     sec_a_results = await asyncio.gather(*sec_a_tasks)
     all_sec_a_qs = []
@@ -372,11 +427,13 @@ async def stream_primary_beta_paper(subject: str, level: str, brand_name: str = 
     sec_b_chunk_size = 5 if blueprint.sec_b_count >= 10 else blueprint.sec_b_count
     for i in range(0, blueprint.sec_b_count, sec_b_chunk_size):
         c_count = min(sec_b_chunk_size, blueprint.sec_b_count - i)
-        sec_b_chunks.append((sec_b_start + i, c_count))
+        # Enforce max 1 diagram total in Section B (in the first chunk only)
+        max_d = 1 if i == 0 else 0
+        sec_b_chunks.append((sec_b_start + i, c_count, max_d))
 
     sec_b_tasks = [
-        asyncio.create_task(generate_primary_beta_chunk(blueprint, "B", c_count, start_num))
-        for start_num, c_count in sec_b_chunks
+        asyncio.create_task(generate_primary_beta_chunk(blueprint, "B", c_count, start_num, max_diagrams=max_d))
+        for start_num, c_count, max_d in sec_b_chunks
     ]
 
     sec_b_results = await asyncio.gather(*sec_b_tasks)

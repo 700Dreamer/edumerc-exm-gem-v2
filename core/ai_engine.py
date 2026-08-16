@@ -298,7 +298,7 @@ async def generate_exam_diagram(diagram_description: str, subject: str, level: s
         "STRICT DESIGN & ACCURACY RULES:\n"
         "1. The diagram MUST accurately depict the values, lines, boundaries, and variables mentioned in the question so the student can use this diagram to find the correct answer.\n"
         "2. The diagram MUST be geometrically perfect (e.g. if the question mentions a right angle, show a clear right-angled shape; if it is a Venn diagram, draw clean, perfect overlapping circles).\n"
-        "3. Style: clean textbook outline line-art only, pure white background, sharp black lines (no colour, no grey gradients, no artistic shadows/shading).\n"
+        "3. Style: minimalist, 2D vector style, clean textbook outline line-art only, pure white background, sharp black lines. NO colours, NO grey gradients, NO artistic shading, NO 3D effects.\n"
         "4. Text Labels: Any labels (like A, B, 5cm, 90°) must be written in a simple standard sans-serif font (like Arial/Helvetica) and must be perfectly horizontal and 100% readable. No handwriting, no cursive, no distorted letters.\n"
         "5. No decorative borders, no watermarks, no external explanations.\n"
         "6. PEDAGOGICAL SAFETY (CRITICAL): The diagram MUST NOT reveal or label the final correct answer (\"{answer_text}\") anywhere in the visual. The diagram should only show the setup, question boundaries, and unknown variables (e.g. if the question asks to find side 'x', that side MUST be labeled in the drawing as 'x' or '?', NOT as its resolved final numerical value). The student must do the actual math to solve it.\n"

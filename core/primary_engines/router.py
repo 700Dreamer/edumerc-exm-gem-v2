@@ -13,21 +13,6 @@ class PrimaryEngineRouter:
         subj_clean = (subject or "").strip().lower()
         lvl_clean = (level or "").strip().lower()
 
-        is_p7 = any(x in lvl_clean for x in ["primary 7", "p.7", "p7"])
-        is_english = "english" in subj_clean
-        is_science = any(x in subj_clean for x in ["science", "integrated science"])
-        is_sst = any(x in subj_clean for x in ["social", "sst", "re", "religious"])
-
-        if is_p7 and is_english:
-            async for chunk in P7EnglishEngine.stream_paper(brand_name=brand_name):
-                yield chunk
-        elif is_p7 and is_science:
-            async for chunk in P7ScienceEngine.stream_paper(brand_name=brand_name):
-                yield chunk
-        elif is_p7 and is_sst:
-            async for chunk in P7SSTEngine.stream_paper(brand_name=brand_name):
-                yield chunk
-        else:
-            # Fallback to general primary beta engine
-            async for chunk in stream_primary_beta_paper(subject=subject, level=level, brand_name=brand_name):
-                yield chunk
+        # Send all primary traffic to the unified primary beta engine
+        async for chunk in stream_primary_beta_paper(subject=subject, level=level, brand_name=brand_name):
+            yield chunk

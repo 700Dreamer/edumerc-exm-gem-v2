@@ -289,9 +289,9 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
                 if "ENGLISH" in subject.upper() or "PRIMARY" in level.upper():
                     sec_a_hdr = (
                         "<div style='text-align:center; margin-top:20px; margin-bottom:25px;'>"
-                        "<div style='font-weight:900; font-size:18px; text-transform:uppercase; margin-bottom:4px;'>SECTION A: 50 MARKS</div>"
+                        f"<div style='font-weight:900; font-size:18px; text-transform:uppercase; margin-bottom:4px;'>SECTION A: {sec_a_marks} MARKS</div>"
                         "<div style='font-weight:bold; font-size:16px; margin-bottom:6px;'>Sub - Section I</div>"
-                        "<div style='font-size:15px;'>Questions <b>1</b> to <b>50</b> carry one mark each.</div>"
+                        f"<div style='font-size:15px;'>Questions <b>1</b> to <b>{sec_a_count}</b>.</div>"
                         "</div>"
                     )
                     parsed_html += sec_a_hdr
@@ -314,8 +314,8 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
                 if "ENGLISH" in subject.upper() or "PRIMARY" in level.upper():
                     sec_b_header = (
                         "<div style='text-align:center; margin-top:30px; margin-bottom:20px;'>"
-                        "<div style='font-weight:900; font-size:18px; text-transform:uppercase; margin-bottom:4px;'>SECTION B: 50 MARKS</div>"
-                        "<div style='font-size:15px;'>Questions <b>51</b> to <b>55</b> carry ten marks each.</div>"
+                        f"<div style='font-weight:900; font-size:18px; text-transform:uppercase; margin-bottom:4px;'>SECTION B: {sec_b_marks} MARKS</div>"
+                        f"<div style='font-size:15px;'>Questions <b>{sec_a_count + 1}</b> to <b>{sec_a_count + sec_b_count}</b>.</div>"
                         "</div>"
                     )
                 else:
@@ -412,6 +412,8 @@ def build_full_html(mode, exam_type, level, subject, term_roman, exam_year, dura
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" type="text/css" href="https://tikzjax.com/v1/fonts.css">
+<script src="https://tikzjax.com/v1/tikzjax.js"></script>
 <style>
 :root {{
   --p: #800020;
@@ -488,11 +490,10 @@ body {{
 
 /* ── ILLUSTRATION & DIAGRAM STYLING ── */
 .ill-box img {{ max-width: 400px; height: auto; border-radius: 8px; margin: 0 auto; display: block; }}
-.ill-box svg {{ max-width: 400px; height: auto; display: block; margin: 0 auto; }}
-.ill-box svg * {{ stroke-width: 2px !important; }}
+.ill-box svg, .tikz-container svg {{ max-width: 100%; max-height: 220px; height: auto; display: block; margin: 0 auto; background: transparent !important; }}
+.ill-box svg *, .tikz-container svg * {{ stroke-width: 2px !important; }}
 
 /* ── REAL PAPER (UNEB) PROTOCOL ── */
-.tmpl-uneb {{ font-family: inherit; }}
 .tmpl-uneb.page {{ border: 6px double #000 !important; box-shadow: none !important; border-radius: 0 !important; }}
 .tmpl-uneb .brand-h {{ flex-direction: column !important; align-items: center !important; text-align: center !important; border-bottom: 2px solid #000 !important; }}
 .tmpl-uneb .brand-name {{ font-family: serif !important; text-transform: uppercase !important; font-size: 24px !important; font-weight:bold !important; font-style: normal !important; color: #000 !important; margin-top:5px !important; }}
@@ -584,7 +585,7 @@ body {{
     <div style="font-size:17px; font-weight:bold;">Uganda Certificate of Education</div>
     <div style="font-size:15px; font-weight:bold; text-transform:uppercase; margin-top:4px;">{exam_type} {term_roman} ASSESSMENT {exam_year}</div>
     <div style="font-size:17px; font-weight:bold; text-transform:uppercase; margin-top:4px;">{short_lvl} {subject.upper()}</div>
-    <div style="font-size:15px; font-weight:bold; margin-top:4px;">Paper 1</div>
+    <div style="font-size:17px; font-weight:bold; margin-top:4px;">Paper 1</div>
     <div style="font-size:14px; margin-top:4px;">{official_duration}</div>
   </div>
 
@@ -670,6 +671,7 @@ body {{
   </div>
 
   <div class="col-l" style="margin-top:15px;">{left_col}{right_col}</div>
+  <div style="position: absolute; bottom: 20px; right: 40px; font-weight: bold; font-size: 15px; font-style: italic;">Turn Over</div>
 </div>
 
 <!-- PAGE 2: CONTENT -->
@@ -749,8 +751,9 @@ const tmpls = {{
 
 function applyT(t) {{
   const theme = tmpls[t] || tmpls['elite_dark'];
-  const p = document.getElementById('mainP');
-  p.className = 'page ' + (theme.class || '');
+  document.querySelectorAll('.page').forEach(p => {{
+    p.className = 'page ' + (theme.class || '');
+  }});
   Object.entries(theme).forEach(([k,v]) => {{ if(k!=='class') sv(k,v); }});
 }}
 
@@ -856,8 +859,11 @@ document.addEventListener("DOMContentLoaded", function() {{
         const page = allPages[i];
         const oldPgn = page.querySelector('.pgn');
         if (oldPgn) oldPgn.remove(); // clear generic pagination
+        const oldFooter = page.querySelector('.page-footer');
+        if (oldFooter) oldFooter.remove(); // clear auto-generated footer
         
         const footerDiv = document.createElement('div');
+        footerDiv.className = 'page-footer';
         footerDiv.style.position = 'absolute';
         footerDiv.style.bottom = '20px';
         footerDiv.style.left = '40px';
@@ -1247,7 +1253,7 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
         return ""
         
     num = q.get("number", "")
-    text = q.get("text") or ""
+    text = q.get("text") or q.get("scenario") or ""
     marks = q.get("marks", "")
     tikz = q.get("tikz_code")
     ans = q.get("answer", "")
@@ -1355,7 +1361,7 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
         is_math = any(s in subject.lower() for s in ["math", "mathematics", "numeracy"])
         is_secondary = any(x in str(level) for x in ["Senior", "S.1", "S.2", "S.3", "S.4", "S.5", "S.6"])
         
-        ctx_raw = q.get("context_block") or q.get("stimulus_text")
+        ctx_raw = q.get("context") or q.get("context_block") or q.get("stimulus_text")
         if ctx_raw and isinstance(ctx_raw, str):
             ctx_block = ctx_raw.replace("\\n", "\n")
         else:
@@ -1388,6 +1394,11 @@ def build_question_html(mode, q, subject, level, is_two_col_math=False, is_marki
             support=q.get("support"),
             context_block=ctx_block,
             task_heading=q.get("task_heading"),
+            task=q.get("task"),
+            resources=q.get("resources"),
+            difficulty=q.get("difficulty"),
+            time=q.get("time"),
+            competency=q.get("competency"),
             diagram_url=diagram_url,
             answer=ans,
             working_columns=working_columns,
