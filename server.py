@@ -678,7 +678,7 @@ async def rlhf_feedback_endpoint(
         # 2. Vectorize the 'improved' question into ChromaDB
         chroma_client = chromadb.PersistentClient(path=os.path.join(BASE_DIR, "chroma_db"))
         openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-            api_key="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",
+            api_key=os.environ.get("OPENAI_API_KEY"),
             model_name="text-embedding-3-small"
         )
         collection = chroma_client.get_or_create_collection(name="nursery_papers", embedding_function=openai_ef)

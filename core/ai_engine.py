@@ -385,7 +385,7 @@ def get_openai_client(ai_model: str = "gpt-5"):
         base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         return OpenAI(api_key="ollama", base_url=base_url)
 
-    api_key = "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"
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         api_key = "dummy_key"
     return OpenAI(api_key=api_key)
@@ -397,7 +397,7 @@ def get_async_openai_client(ai_model: str = "gpt-5"):
         base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         return AsyncOpenAI(api_key="ollama", base_url=base_url, timeout=httpx.Timeout(300.0))
 
-    api_key = "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"
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         api_key = "dummy_key"
     return AsyncOpenAI(api_key=api_key, timeout=httpx.Timeout(120.0))
